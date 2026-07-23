@@ -91,15 +91,16 @@
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
 }
 .bottombar-tab {
-  flex: 1;
+  flex: 1; min-width: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; padding: 6px 0 4px; text-decoration: none;
+  gap: 3px; padding: 6px 2px 4px; text-decoration: none;
   color: rgba(255, 255, 255, 0.45);
-  font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+  font-size: 9px; font-weight: 600; letter-spacing: 0.03em;
+  white-space: nowrap;
   -webkit-tap-highlight-color: transparent; transition: color 0.15s;
 }
 .bottombar-tab-icon {
-  font-size: 24px; line-height: 1;
+  font-size: 22px; line-height: 1;
   filter: grayscale(100%) brightness(1.2); opacity: 0.55;
   transition: opacity 0.15s, filter 0.15s, transform 0.10s;
 }
@@ -118,8 +119,8 @@ body.has-bottombar {
   .topbar-water-add { width: 40px; font-size: 18px; }
   .topbar-finance-btn { width: 40px; height: 38px; }
   .topbar-finance-icon { font-size: 18px; }
-  .bottombar-tab-icon { font-size: 22px; }
-  .bottombar-tab { font-size: 10px; }
+  .bottombar-tab-icon { font-size: 20px; }
+  .bottombar-tab { font-size: 8.5px; }
 }
 html, body { -webkit-text-size-adjust: 100%; }
 @media (max-width: 768px) {
@@ -173,6 +174,12 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   <a href="gym.html" class="bottombar-tab" data-page="fitness">
     <span class="bottombar-tab-icon">💪</span><span>Fitness</span>
   </a>
+  <a href="learn.html" class="bottombar-tab" data-page="learn">
+    <span class="bottombar-tab-icon">📚</span><span>Learn</span>
+  </a>
+  <a href="work.html" class="bottombar-tab" data-page="work">
+    <span class="bottombar-tab-icon">💼</span><span>Work</span>
+  </a>
 </nav>`;
 
   function isFinancePage() {
@@ -187,6 +194,8 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     const p = (window.location.pathname || '').toLowerCase();
     if (p.endsWith('health.html')) return 'health';
     if (p.endsWith('gym.html')) return 'fitness';
+    if (p.endsWith('learn.html')) return 'learn';
+    if (p.endsWith('work.html')) return 'work';
     return 'main';
   }
 
