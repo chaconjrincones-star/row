@@ -280,6 +280,62 @@ img, video, canvas, svg { max-width: 100%; }
   display: flex; align-items: center; justify-content: center; text-decoration: none;
 }
 
+/* ----- Workout generator ----- */
+#wgChevron { transition: transform 0.2s; }
+.wg-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.wg-field:last-child { margin-bottom: 0; }
+.wg-field > label {
+  font-size: 10px; color: var(--text-3); font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+.wg-field select {
+  padding: 12px; border: 1px solid var(--border); background: rgba(0,0,0,0.28); color: var(--text-1);
+  border-radius: 12px; font-family: inherit; font-size: 14px;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%2387847B' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+}
+.wg-field input[type="range"] { width: 100%; accent-color: var(--good); margin-top: 4px; }
+.wg-equip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.wg-equip-chip {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+  border: 1px solid var(--border); border-radius: 10px; background: rgba(255,255,255,0.02);
+  font-size: 12.5px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.wg-equip-chip input { accent-color: var(--good); width: 16px; height: 16px; flex-shrink: 0; }
+.wg-equip-chip.checked { background: rgba(110,231,183,0.08); border-color: rgba(110,231,183,0.25); }
+.wg-warn {
+  margin-top: 10px; padding: 10px 12px; border-radius: 10px;
+  background: rgba(251,191,36,0.10); border: 1px solid rgba(251,191,36,0.25);
+  color: var(--warn); font-size: 12px;
+}
+.wg-item { display: flex; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px solid var(--border); }
+.wg-item:last-child { border-bottom: none; }
+.wg-item-main { flex: 1; min-width: 0; }
+.wg-item-name { font-weight: 700; font-size: 13.5px; }
+.wg-item-meta { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+.wg-item-tag {
+  font-size: 9px; padding: 3px 7px; border-radius: 999px; background: rgba(255,255,255,0.06);
+  color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; flex-shrink: 0;
+}
+.wg-item-swap {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04); color: var(--text-2); cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 13px;
+  -webkit-tap-highlight-color: transparent;
+}
+.wg-actions-row { display: flex; gap: 8px; margin-top: 12px; }
+.wg-actions-row button { flex: 1; }
+.wg-checklist-item { display: flex; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.wg-checklist-item:last-child { border-bottom: none; }
+.wg-checklist-item.done { opacity: 0.45; }
+.wg-checklist-check {
+  width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border-strong);
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px;
+}
+.wg-checklist-item.done .wg-checklist-check { background: var(--good); border-color: var(--good); color: #0a0a0b; }
+
 /* ----- Sub-section title ----- */
 .po-sub-section { margin-top: 22px; }
 .po-sub-section:first-child { margin-top: 0; }
@@ -1441,6 +1497,63 @@ img, video, canvas, svg { max-width: 100%; }
 
   </div>
 
+  <div class="card">
+    <div class="po-header" id="wgHeader" style="cursor:pointer;margin-bottom:0;">
+      <h1 class="po-title" style="font-size:17px;">🏋️ Generador de entrenamiento</h1>
+      <button class="po-icon-btn" id="wgToggleBtn" type="button" aria-label="Expandir/colapsar" tabindex="-1">
+        <svg id="wgChevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+    <div id="wgBody" class="hidden" style="margin-top:16px;">
+      <div class="po-sub-section">
+        <div class="po-sub-title">Equipo disponible</div>
+        <div class="wg-equip-grid" id="wgEquipGrid"></div>
+        <button class="po-btn-secondary" id="wgBwOnlyBtn" type="button" style="width:100%;margin-top:8px;">Solo peso corporal</button>
+      </div>
+
+      <div class="po-sub-section">
+        <div class="po-sub-title">Sesión</div>
+        <div class="wg-field">
+          <label>Grupo</label>
+          <select id="wgGroup">
+            <option value="push">Push</option>
+            <option value="pull">Pull</option>
+            <option value="legs">Legs</option>
+            <option value="full">Full body</option>
+            <option value="core">Core</option>
+          </select>
+        </div>
+        <div class="wg-field">
+          <label>Tiempo disponible — <span id="wgMinutesVal">40</span> min</label>
+          <input type="range" id="wgMinutes" min="15" max="90" step="5" value="40">
+        </div>
+        <div class="wg-field">
+          <label>Objetivo</label>
+          <select id="wgGoal">
+            <option value="hypertrophy">Hipertrofia</option>
+            <option value="strength">Fuerza</option>
+            <option value="endurance">Resistencia</option>
+          </select>
+        </div>
+        <button class="po-btn-secondary" id="wgExcludeBtn" type="button" style="width:100%;">Excluir ejercicios…</button>
+      </div>
+
+      <button class="po-btn-primary" id="wgGenerateBtn" type="button">Generar rutina</button>
+      <div class="wg-warn hidden" id="wgWarn"></div>
+
+      <div id="wgResultWrap" class="hidden">
+        <div class="po-sub-section">
+          <div class="po-sub-title">Rutina generada</div>
+          <div id="wgResultList"></div>
+          <div class="wg-actions-row">
+            <button class="po-btn-secondary" id="wgRegenBtn" type="button">🔄 Regenerar</button>
+            <button class="po-btn-primary" id="wgUseBtn" type="button">Usar esta rutina</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="po-header">
     <h1 class="po-title" id="appTitle">Progressive Overload Coach</h1>
     <button class="po-icon-btn" id="settingsBtn" title="Settings" aria-label="Settings">
@@ -1460,6 +1573,8 @@ img, video, canvas, svg { max-width: 100%; }
         <div class="po-seg-control" id="daySeg"></div>
       </div>
     </div>
+
+    <div id="wgPlanChecklist" class="po-sub-section hidden"></div>
 
     <!-- Exercise -->
     <div class="po-sub-section">
@@ -1693,6 +1808,17 @@ img, video, canvas, svg { max-width: 100%; }
 
     <div class="po-modal-actions">
       <button class="po-btn-primary" id="setModalClose">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Workout generator: exclude-exercises modal -->
+<div class="po-modal-bg" id="wgExcludeModalBg">
+  <div class="po-modal">
+    <h3>Excluir ejercicios</h3>
+    <div id="wgExcludeList"></div>
+    <div class="po-modal-actions">
+      <button class="po-btn-primary" id="wgExcludeClose" type="button">Listo</button>
     </div>
   </div>
 </div>
@@ -2080,6 +2206,7 @@ img, video, canvas, svg { max-width: 100%; }
       const w = logs.length ? logs[logs.length - 1].weight : (ex.startWeight || 0);
       $('weightInput').value = w;
     }
+    if (typeof wgRenderChecklist === 'function') wgRenderChecklist();
   }
 
   // ============================================================
@@ -3287,11 +3414,406 @@ img, video, canvas, svg { max-width: 100%; }
   $('wtCmpSideB').addEventListener('click', cycleCompareTarget);
 
   // ============================================================
+  // WORKOUT GENERATOR — equipment-aware routine builder that feeds
+  // straight into the exercise picker above. Its own exercise
+  // database is separate from state.exercises (the user's tracked
+  // lifts); "Usar esta rutina" bridges the two by creating-or-reusing
+  // entries in state.exercises by name, so progression history for
+  // an exercise never fragments across two different records.
+  // ============================================================
+  const WG_KEY = 'workout_gen_v1';
+
+  const WG_EQUIPMENT = [
+    { key: 'bodyweight', label: 'Peso corporal' },
+    { key: 'dumbbell', label: 'Mancuernas' },
+    { key: 'band', label: 'Banda elástica' },
+    { key: 'pullup_bar', label: 'Barra de dominadas' },
+    { key: 'bench', label: 'Banco' },
+    { key: 'kettlebell', label: 'Kettlebell' },
+    { key: 'barbell', label: 'Barra olímpica + discos' },
+    { key: 'cable', label: 'Máquina de cable/polea' },
+    { key: 'trx', label: 'TRX' }
+  ];
+
+  const WG_GROUPS = [
+    { key: 'push', label: 'Push' },
+    { key: 'pull', label: 'Pull' },
+    { key: 'legs', label: 'Legs' },
+    { key: 'full', label: 'Full body' },
+    { key: 'core', label: 'Core' }
+  ];
+
+  const WG_GOALS = {
+    strength:    { label: 'Fuerza',      sets: 4, repText: '4-6',  repMin: 4,  repMax: 6,  restSec: 150 },
+    hypertrophy: { label: 'Hipertrofia', sets: 3, repText: '8-12', repMin: 8,  repMax: 12, restSec: 90 },
+    endurance:   { label: 'Resistencia', sets: 3, repText: '15+',  repMin: 15, repMax: 20, restSec: 45 }
+  };
+
+  // name, group, equipment[] (ALL required), difficulty, isCompound
+  const WG_DB = [
+    // ---- PUSH ----
+    { id: 'push_bench_bb', name: 'Press banca con barra', group: 'push', equipment: ['barbell', 'bench'], difficulty: 'intermediate', isCompound: true },
+    { id: 'push_bench_db', name: 'Press banca con mancuernas', group: 'push', equipment: ['dumbbell', 'bench'], difficulty: 'intermediate', isCompound: true },
+    { id: 'push_ohp_bb', name: 'Press militar con barra', group: 'push', equipment: ['barbell'], difficulty: 'intermediate', isCompound: true },
+    { id: 'push_ohp_db', name: 'Press militar con mancuernas', group: 'push', equipment: ['dumbbell'], difficulty: 'intermediate', isCompound: true },
+    { id: 'push_pushup', name: 'Flexiones de pecho', group: 'push', equipment: ['bodyweight'], difficulty: 'beginner', isCompound: true },
+    { id: 'push_dip', name: 'Fondos (dips)', group: 'push', equipment: ['bodyweight'], difficulty: 'intermediate', isCompound: true },
+    { id: 'push_incline_db', name: 'Press inclinado con mancuernas', group: 'push', equipment: ['dumbbell', 'bench'], difficulty: 'intermediate', isCompound: true },
+    { id: 'push_cable_fly', name: 'Aperturas en polea', group: 'push', equipment: ['cable'], difficulty: 'beginner', isCompound: false },
+    { id: 'push_db_fly', name: 'Aperturas con mancuernas', group: 'push', equipment: ['dumbbell', 'bench'], difficulty: 'beginner', isCompound: false },
+    { id: 'push_lateral_raise', name: 'Elevaciones laterales', group: 'push', equipment: ['dumbbell'], difficulty: 'beginner', isCompound: false },
+    { id: 'push_band_press', name: 'Press con banda', group: 'push', equipment: ['band'], difficulty: 'beginner', isCompound: true },
+    { id: 'push_pike_pushup', name: 'Flexiones pike (hombro)', group: 'push', equipment: ['bodyweight'], difficulty: 'intermediate', isCompound: true },
+    { id: 'push_triceps_pushdown', name: 'Extensión de tríceps en polea', group: 'push', equipment: ['cable'], difficulty: 'beginner', isCompound: false },
+    { id: 'push_overhead_triceps', name: 'Extensión de tríceps sobre cabeza', group: 'push', equipment: ['dumbbell'], difficulty: 'beginner', isCompound: false },
+    { id: 'push_trx_pushup', name: 'Flexiones en TRX', group: 'push', equipment: ['trx'], difficulty: 'intermediate', isCompound: true },
+
+    // ---- PULL ----
+    { id: 'pull_pullup', name: 'Dominadas', group: 'pull', equipment: ['pullup_bar'], difficulty: 'intermediate', isCompound: true },
+    { id: 'pull_chinup', name: 'Dominadas supinas', group: 'pull', equipment: ['pullup_bar'], difficulty: 'intermediate', isCompound: true },
+    { id: 'pull_bb_row', name: 'Remo con barra', group: 'pull', equipment: ['barbell'], difficulty: 'intermediate', isCompound: true },
+    { id: 'pull_db_row', name: 'Remo con mancuerna a una mano', group: 'pull', equipment: ['dumbbell', 'bench'], difficulty: 'beginner', isCompound: true },
+    { id: 'pull_cable_row', name: 'Remo en polea baja', group: 'pull', equipment: ['cable'], difficulty: 'beginner', isCompound: true },
+    { id: 'pull_lat_pulldown', name: 'Jalón al pecho en polea', group: 'pull', equipment: ['cable'], difficulty: 'beginner', isCompound: true },
+    { id: 'pull_band_row', name: 'Remo con banda', group: 'pull', equipment: ['band'], difficulty: 'beginner', isCompound: true },
+    { id: 'pull_deadlift', name: 'Peso muerto', group: 'pull', equipment: ['barbell'], difficulty: 'advanced', isCompound: true },
+    { id: 'pull_kb_swing', name: 'Swing con kettlebell', group: 'pull', equipment: ['kettlebell'], difficulty: 'intermediate', isCompound: true },
+    { id: 'pull_curl_bb', name: 'Curl de bíceps con barra', group: 'pull', equipment: ['barbell'], difficulty: 'beginner', isCompound: false },
+    { id: 'pull_curl_db', name: 'Curl de bíceps con mancuernas', group: 'pull', equipment: ['dumbbell'], difficulty: 'beginner', isCompound: false },
+    { id: 'pull_face_pull', name: 'Face pull en polea', group: 'pull', equipment: ['cable'], difficulty: 'beginner', isCompound: false },
+    { id: 'pull_trx_row', name: 'Remo en TRX', group: 'pull', equipment: ['trx'], difficulty: 'beginner', isCompound: true },
+    { id: 'pull_superman', name: 'Superman (espalda baja)', group: 'pull', equipment: ['bodyweight'], difficulty: 'beginner', isCompound: false },
+    { id: 'pull_band_pull_apart', name: 'Band pull-apart', group: 'pull', equipment: ['band'], difficulty: 'beginner', isCompound: false },
+
+    // ---- LEGS ----
+    { id: 'legs_back_squat', name: 'Sentadilla trasera con barra', group: 'legs', equipment: ['barbell'], difficulty: 'intermediate', isCompound: true },
+    { id: 'legs_goblet_squat', name: 'Sentadilla goblet', group: 'legs', equipment: ['dumbbell'], difficulty: 'beginner', isCompound: true },
+    { id: 'legs_bodyweight_squat', name: 'Sentadilla con peso corporal', group: 'legs', equipment: ['bodyweight'], difficulty: 'beginner', isCompound: true },
+    { id: 'legs_rdl', name: 'Peso muerto rumano', group: 'legs', equipment: ['barbell'], difficulty: 'intermediate', isCompound: true },
+    { id: 'legs_db_rdl', name: 'Peso muerto rumano con mancuernas', group: 'legs', equipment: ['dumbbell'], difficulty: 'intermediate', isCompound: true },
+    { id: 'legs_lunge', name: 'Zancadas con mancuernas', group: 'legs', equipment: ['dumbbell'], difficulty: 'beginner', isCompound: true },
+    { id: 'legs_bw_lunge', name: 'Zancadas con peso corporal', group: 'legs', equipment: ['bodyweight'], difficulty: 'beginner', isCompound: true },
+    { id: 'legs_bulgarian_split', name: 'Sentadilla búlgara', group: 'legs', equipment: ['dumbbell', 'bench'], difficulty: 'intermediate', isCompound: true },
+    { id: 'legs_leg_press', name: 'Prensa de piernas', group: 'legs', equipment: ['cable'], difficulty: 'beginner', isCompound: true },
+    { id: 'legs_kb_goblet', name: 'Sentadilla goblet con kettlebell', group: 'legs', equipment: ['kettlebell'], difficulty: 'beginner', isCompound: true },
+    { id: 'legs_glute_bridge', name: 'Puente de glúteo', group: 'legs', equipment: ['bodyweight'], difficulty: 'beginner', isCompound: false },
+    { id: 'legs_calf_raise', name: 'Elevación de talones', group: 'legs', equipment: ['bodyweight'], difficulty: 'beginner', isCompound: false },
+    { id: 'legs_band_squat', name: 'Sentadilla con banda', group: 'legs', equipment: ['band'], difficulty: 'beginner', isCompound: true },
+    { id: 'legs_step_up', name: 'Step-up en banco', group: 'legs', equipment: ['bench', 'dumbbell'], difficulty: 'beginner', isCompound: true },
+    { id: 'legs_wall_sit', name: 'Wall sit', group: 'legs', equipment: ['bodyweight'], difficulty: 'beginner', isCompound: false },
+
+    // ---- CORE ----
+    { id: 'core_plank', name: 'Plancha', group: 'core', equipment: ['bodyweight'], difficulty: 'beginner', isCompound: true },
+    { id: 'core_situp', name: 'Abdominales (sit-up)', group: 'core', equipment: ['bodyweight'], difficulty: 'beginner', isCompound: false },
+    { id: 'core_leg_raise', name: 'Elevación de piernas colgado', group: 'core', equipment: ['pullup_bar'], difficulty: 'intermediate', isCompound: false },
+    { id: 'core_cable_crunch', name: 'Crunch en polea', group: 'core', equipment: ['cable'], difficulty: 'beginner', isCompound: false },
+    { id: 'core_russian_twist', name: 'Giro ruso con mancuerna', group: 'core', equipment: ['dumbbell'], difficulty: 'beginner', isCompound: false },
+    { id: 'core_kb_situp', name: 'Sit-up con kettlebell', group: 'core', equipment: ['kettlebell'], difficulty: 'intermediate', isCompound: false },
+    { id: 'core_trx_fallout', name: 'Fallout en TRX', group: 'core', equipment: ['trx'], difficulty: 'intermediate', isCompound: true },
+    { id: 'core_band_pallof', name: 'Pallof press con banda', group: 'core', equipment: ['band'], difficulty: 'beginner', isCompound: false },
+    { id: 'core_deadbug', name: 'Dead bug', group: 'core', equipment: ['bodyweight'], difficulty: 'beginner', isCompound: false },
+
+    // ---- WARMUP (only used for the optional lead-in slot) ----
+    { id: 'warmup_dynamic', name: 'Movilidad dinámica (5 min)', group: 'warmup', equipment: ['bodyweight'], difficulty: 'beginner', isCompound: false },
+    { id: 'warmup_jump_rope', name: 'Cuerda / cardio ligero (5 min)', group: 'warmup', equipment: ['bodyweight'], difficulty: 'beginner', isCompound: false },
+    { id: 'warmup_band_pullapart', name: 'Activación con banda', group: 'warmup', equipment: ['band'], difficulty: 'beginner', isCompound: false }
+  ];
+
+  function wgDefaultPrefs() {
+    return {
+      equipment: WG_EQUIPMENT.map(e => e.key),
+      filters: { group: 'push', minutes: 40, goal: 'hypertrophy' },
+      excluded: [],
+      collapsed: true,
+      activePlan: null
+    };
+  }
+  function wgLoad() {
+    try {
+      const raw = localStorage.getItem(WG_KEY);
+      const d = wgDefaultPrefs();
+      if (!raw) return d;
+      const p = JSON.parse(raw);
+      return Object.assign(d, p, {
+        equipment: Array.isArray(p.equipment) ? p.equipment : d.equipment,
+        filters: Object.assign({}, d.filters, p.filters || {}),
+        excluded: Array.isArray(p.excluded) ? p.excluded : []
+      });
+    } catch (e) { return wgDefaultPrefs(); }
+  }
+  function wgSave() { try { localStorage.setItem(WG_KEY, JSON.stringify(wg)); } catch (e) {} }
+  let wg = wgLoad();
+
+  function wgFilteredDb(groupKey) {
+    const groups = groupKey === 'full' ? ['push', 'pull', 'legs', 'core'] : [groupKey];
+    return WG_DB.filter(e =>
+      groups.indexOf(e.group) !== -1 &&
+      e.equipment.every(eq => wg.equipment.indexOf(eq) !== -1) &&
+      wg.excluded.indexOf(e.id) === -1
+    );
+  }
+  function wgCountForMinutes(minutes) {
+    return Math.max(2, Math.min(8, Math.round(minutes / 7)));
+  }
+  function wgPickWarmup() {
+    const pool = WG_DB.filter(e => e.group === 'warmup' && e.equipment.every(eq => wg.equipment.indexOf(eq) !== -1));
+    if (!pool.length) return null;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+  function wgShuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+  function wgGenerate(avoidIds) {
+    const f = wg.filters;
+    const pool = wgFilteredDb(f.group);
+    if (!pool.length) {
+      return { items: [], warn: 'Con este equipo no hay opciones para ' + ((WG_GROUPS.find(g => g.key === f.group) || {}).label || f.group) + '. Agrega más equipo o cambia de grupo.' };
+    }
+    const compounds = pool.filter(e => e.isCompound);
+    const accessories = pool.filter(e => !e.isCompound);
+    let ordered = wgShuffle(compounds).concat(wgShuffle(accessories));
+    if (avoidIds && avoidIds.length) {
+      const withoutPrev = ordered.filter(e => avoidIds.indexOf(e.id) === -1);
+      const slots = wgCountForMinutes(f.minutes);
+      if (withoutPrev.length >= slots) {
+        ordered = withoutPrev.concat(ordered.filter(e => avoidIds.indexOf(e.id) !== -1));
+      }
+    }
+    const slots = wgCountForMinutes(f.minutes);
+    const chosen = ordered.slice(0, slots);
+    let warn = null;
+    if (chosen.length < slots) {
+      warn = 'Con este equipo hay pocas opciones para ' + ((WG_GROUPS.find(g => g.key === f.group) || {}).label || f.group) + ', considera agregar más equipo o bajar el tiempo.';
+    }
+    const goal = WG_GOALS[f.goal] || WG_GOALS.hypertrophy;
+    const items = chosen.map(e => ({
+      dbId: e.id, name: e.name, group: e.group,
+      sets: goal.sets, repText: goal.repText, repMin: goal.repMin, repMax: goal.repMax,
+      restSec: goal.restSec, isCompound: !!e.isCompound, isWarmup: false
+    }));
+    if (f.minutes >= 30) {
+      const w = wgPickWarmup();
+      if (w) items.unshift({ dbId: w.id, name: w.name, group: 'warmup', sets: 1, repText: '—', repMin: null, repMax: null, restSec: 0, isCompound: false, isWarmup: true });
+    }
+    return { items, warn };
+  }
+
+  function wgShowWarn(msg) {
+    const el = $('wgWarn');
+    if (msg) { el.textContent = msg; el.classList.remove('hidden'); }
+    else el.classList.add('hidden');
+  }
+  function wgRenderResult() {
+    const wrap = $('wgResultList');
+    const resultWrap = $('wgResultWrap');
+    const plan = wg.activePlan;
+    if (!plan || !plan.items.length) { resultWrap.classList.add('hidden'); return; }
+    resultWrap.classList.remove('hidden');
+    wrap.innerHTML = plan.items.map((it, i) => {
+      const tag = it.isWarmup ? 'Warmup' : (it.isCompound ? 'Compuesto' : 'Accesorio');
+      const meta = it.isWarmup ? 'Al inicio, antes de la rutina' : (it.sets + '×' + it.repText + ' · descanso ' + Math.round(it.restSec / 60) + ' min');
+      return '<div class="wg-item" data-idx="' + i + '">' +
+        '<div class="wg-item-main"><div class="wg-item-name">' + escape(it.name) + '</div>' +
+        '<div class="wg-item-meta">' + meta + '</div></div>' +
+        '<div class="wg-item-tag">' + tag + '</div>' +
+        (it.isWarmup ? '' : '<button class="wg-item-swap" data-idx="' + i + '" type="button" title="Cambiar">⇄</button>') +
+      '</div>';
+    }).join('');
+    wrap.querySelectorAll('.wg-item-swap').forEach(btn => {
+      btn.addEventListener('click', (e) => { e.stopPropagation(); wgSwapItem(parseInt(btn.dataset.idx, 10)); });
+    });
+  }
+  function wgSwapItem(idx) {
+    const plan = wg.activePlan;
+    if (!plan) return;
+    const item = plan.items[idx];
+    const usedIds = plan.items.map(x => x.dbId);
+    const candidates = WG_DB.filter(e =>
+      e.group === item.group &&
+      e.equipment.every(eq => wg.equipment.indexOf(eq) !== -1) &&
+      wg.excluded.indexOf(e.id) === -1 &&
+      usedIds.indexOf(e.id) === -1
+    );
+    if (!candidates.length) { alert('No hay otra alternativa disponible con tu equipo actual para este ejercicio.'); return; }
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    plan.items[idx] = Object.assign({}, item, { dbId: pick.id, name: pick.name, isCompound: !!pick.isCompound });
+    wgSave();
+    wgRenderResult();
+  }
+  function wgRegenerate() {
+    const prevIds = wg.activePlan ? wg.activePlan.items.filter(i => !i.isWarmup).map(i => i.dbId) : [];
+    const res = wgGenerate(prevIds);
+    wg.activePlan = res.items.length ? { items: res.items, createdAt: Date.now() } : null;
+    wgSave();
+    wgShowWarn(res.warn);
+    wgRenderResult();
+  }
+  function wgOnGenerateClick() {
+    wg.filters.group = $('wgGroup').value;
+    wg.filters.minutes = parseInt($('wgMinutes').value, 10) || 40;
+    wg.filters.goal = $('wgGoal').value;
+    wgSave();
+    wgRegenerate();
+  }
+
+  function wgRenderEquipGrid() {
+    $('wgEquipGrid').innerHTML = WG_EQUIPMENT.map(e => {
+      const checked = wg.equipment.indexOf(e.key) !== -1;
+      return '<label class="wg-equip-chip' + (checked ? ' checked' : '') + '">' +
+        '<input type="checkbox" data-eq="' + e.key + '"' + (checked ? ' checked' : '') + '>' +
+        '<span>' + e.label + '</span></label>';
+    }).join('');
+    $('wgEquipGrid').querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const key = cb.dataset.eq;
+        if (cb.checked) { if (wg.equipment.indexOf(key) === -1) wg.equipment.push(key); }
+        else { wg.equipment = wg.equipment.filter(k => k !== key); }
+        cb.closest('.wg-equip-chip').classList.toggle('checked', cb.checked);
+        wgSave();
+      });
+    });
+  }
+  function wgBwOnly() {
+    wg.equipment = ['bodyweight'];
+    wgSave();
+    wgRenderEquipGrid();
+  }
+  function wgRenderExcludeModal() {
+    const groups = ['push', 'pull', 'legs', 'core'];
+    let html = '';
+    groups.forEach(g => {
+      const label = (WG_GROUPS.find(x => x.key === g) || {}).label || g;
+      html += '<div class="po-sub-title">' + label + '</div>';
+      html += WG_DB.filter(e => e.group === g).map(e => {
+        const checked = wg.excluded.indexOf(e.id) !== -1;
+        return '<label class="wg-equip-chip" style="width:100%;margin-bottom:6px;">' +
+          '<input type="checkbox" data-exid="' + e.id + '"' + (checked ? ' checked' : '') + '>' +
+          '<span>' + escape(e.name) + '</span></label>';
+      }).join('');
+    });
+    $('wgExcludeList').innerHTML = html;
+    $('wgExcludeList').querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const id = cb.dataset.exid;
+        if (cb.checked) { if (wg.excluded.indexOf(id) === -1) wg.excluded.push(id); }
+        else { wg.excluded = wg.excluded.filter(x => x !== id); }
+        wgSave();
+      });
+    });
+  }
+
+  function wgFindOrCreateExercise(name, groupKey, goal) {
+    const lower = name.trim().toLowerCase();
+    let ex = state.exercises.find(e => e.name.trim().toLowerCase() === lower);
+    if (ex) return ex;
+    let dayId = groupKey === 'warmup' ? state.filterDay : groupKey;
+    if (!state.days.find(d => d.id === dayId)) {
+      const label = (WG_GROUPS.find(g => g.key === dayId) || {}).label || (dayId.charAt(0).toUpperCase() + dayId.slice(1));
+      state.days.push({ id: dayId, name: label });
+    }
+    const dbEntry = WG_DB.find(e => e.name === name);
+    const isBw = dbEntry ? (dbEntry.equipment.length === 1 && dbEntry.equipment[0] === 'bodyweight') : false;
+    ex = {
+      id: uid(), name: name, gym: 'both', day: dayId, bw: isBw,
+      startWeight: 0,
+      repMin: goal ? goal.repMin || 6 : 6,
+      repMax: goal ? goal.repMax || 8 : 8,
+      step: isBw ? 1 : 2.5
+    };
+    state.exercises.push(ex);
+    return ex;
+  }
+  function wgUseRoutine() {
+    const plan = wg.activePlan;
+    if (!plan || !plan.items.length) return;
+    const goal = WG_GOALS[wg.filters.goal] || WG_GOALS.hypertrophy;
+    const checklist = plan.items.map(it => {
+      const ex = wgFindOrCreateExercise(it.name, it.group, goal);
+      return { exId: ex.id, name: ex.name };
+    });
+    wg.activePlan.checklist = checklist;
+    saveState();
+    wgSave();
+    renderAll();
+    if (checklist.length) wgSelectChecklistItem(0);
+    const target = $('exSelect');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function wgIsExDoneToday(exId) {
+    const logs = state.logs[exId] || [];
+    if (!logs.length) return false;
+    const last = logs[logs.length - 1];
+    return (last.date || '').slice(0, 10) === wtDateKey(new Date());
+  }
+  function wgRenderChecklist() {
+    const wrap = $('wgPlanChecklist');
+    const plan = wg.activePlan;
+    if (!plan || !plan.checklist || !plan.checklist.length) { wrap.classList.add('hidden'); wrap.innerHTML = ''; return; }
+    wrap.classList.remove('hidden');
+    wrap.innerHTML = '<div class="po-sub-title">Rutina de hoy</div>' +
+      plan.checklist.map((c, i) => {
+        const doneNow = wgIsExDoneToday(c.exId);
+        return '<div class="wg-checklist-item' + (doneNow ? ' done' : '') + '" data-idx="' + i + '">' +
+          '<div class="wg-checklist-check">' + (doneNow ? '✓' : '') + '</div>' +
+          '<div class="wg-item-main"><div class="wg-item-name">' + escape(c.name) + '</div></div>' +
+        '</div>';
+      }).join('');
+    wrap.querySelectorAll('.wg-checklist-item').forEach(row => {
+      row.addEventListener('click', () => wgSelectChecklistItem(parseInt(row.dataset.idx, 10)));
+    });
+  }
+  function wgSelectChecklistItem(i) {
+    const plan = wg.activePlan;
+    if (!plan || !plan.checklist || !plan.checklist[i]) return;
+    const ex = state.exercises.find(e => e.id === plan.checklist[i].exId);
+    if (!ex) return;
+    state.filterGym = (ex.gym === 'both') ? state.filterGym : ex.gym;
+    state.filterDay = ex.day;
+    state.currentEx = ex.id;
+    saveState();
+    renderAll();
+  }
+
+  function wgSetCollapsed(collapsed) {
+    wg.collapsed = collapsed;
+    $('wgBody').classList.toggle('hidden', collapsed);
+    $('wgChevron').style.transform = collapsed ? '' : 'rotate(180deg)';
+    wgSave();
+  }
+  function wgInit() {
+    wgRenderEquipGrid();
+    $('wgGroup').value = wg.filters.group;
+    $('wgMinutes').value = wg.filters.minutes;
+    $('wgMinutesVal').textContent = wg.filters.minutes;
+    $('wgGoal').value = wg.filters.goal;
+    $('wgBody').classList.toggle('hidden', wg.collapsed);
+    $('wgChevron').style.transform = wg.collapsed ? '' : 'rotate(180deg)';
+
+    $('wgHeader').addEventListener('click', () => wgSetCollapsed(!wg.collapsed));
+    $('wgBwOnlyBtn').addEventListener('click', wgBwOnly);
+    $('wgMinutes').addEventListener('input', () => { $('wgMinutesVal').textContent = $('wgMinutes').value; });
+    $('wgGenerateBtn').addEventListener('click', wgOnGenerateClick);
+    $('wgRegenBtn').addEventListener('click', wgRegenerate);
+    $('wgUseBtn').addEventListener('click', wgUseRoutine);
+    $('wgExcludeBtn').addEventListener('click', () => { wgRenderExcludeModal(); $('wgExcludeModalBg').classList.add('show'); });
+    $('wgExcludeClose').addEventListener('click', () => $('wgExcludeModalBg').classList.remove('show'));
+
+    wgRenderResult();
+    wgRenderChecklist();
+  }
+
+  // ============================================================
   // BOOT
   // ============================================================
   renderAll();
   wtRender();
   photosRender();
+  wgInit();
 
   // ============================================================
   // CLOUD SYNC via Supabase  (OPTIONAL — leave blank for local-only)
@@ -3314,7 +3836,7 @@ img, video, canvas, svg { max-width: 100%; }
   const SUPABASE_URL = 'https://srbllmkcmufpwmsbxqbf.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_7HbXI_uqPjGz2NPhiTtQVw_vPC9YOTH';
   const APP_KEY = 'po-coach';
-  const PC_SYNCED_KEYS = ['po_coach_v1', 'po_coach_workout_done', 'po_coach_weights', 'po_coach_photos'];
+  const PC_SYNCED_KEYS = ['po_coach_v1', 'po_coach_workout_done', 'po_coach_weights', 'po_coach_photos', 'workout_gen_v1'];
 
   let pcSupa = null;
   let pcPushTimer = null;
