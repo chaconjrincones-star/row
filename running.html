@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0b">
+<title>Running — ACJ DASHB</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="sync.js" defer></script>
+<script src="topbar.js" defer></script>
+<style>
+:root {
+  --bg: #0a0a0b;
+  --bg-card: #111113;
+  --text-1: #ffffff;
+  --text-2: rgba(255,255,255,0.6);
+  --text-3: rgba(255,255,255,0.4);
+  --text-4: rgba(255,255,255,0.25);
+  --border: rgba(255,255,255,0.06);
+  --border-strong: rgba(255,255,255,0.14);
+  --good: #6ee7b7;
+  --warn: #fbbf24;
+  --bad: #ff8a8a;
+  --font: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SF Mono, Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, #14141a 0%, #0a0a0b 60%);
+  color: var(--text-1);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+.po-shell {
+  width: 100%; max-width: min(720px, 100vw);
+  margin: 0 auto;
+  padding: 24px 16px calc(40px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+.po-shell *, .po-shell select { min-width: 0; }
+img, video, canvas, svg { max-width: 100%; }
+
+/* ----- Sub-nav (Gym | Running) ----- */
+.po-seg-control {
+  display: flex; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 4px; gap: 3px; margin-bottom: 18px;
+}
+.po-seg-btn {
+  flex: 1; padding: 10px 8px; border: none; background: transparent;
+  color: var(--text-3); border-radius: 8px;
+  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none; display: flex; align-items: center; justify-content: center;
+}
+.po-seg-btn:hover { color: var(--text-2); background: rgba(255,255,255,0.04); }
+.po-seg-btn.active {
+  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
+  color: #0a0a0b;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 12px rgba(0,0,0,0.35);
+}
+
+.po-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.po-title { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 0; }
+.po-icon-btn {
+  width: 38px; height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.po-icon-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-3);
+  margin: 0 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-title::before { content: '≡'; font-size: 14px; opacity: 0.5; }
+
+/* ----- Form fields ----- */
+.rn-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rn-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.rn-field:last-child { margin-bottom: 0; }
+.rn-field > label {
+  font-size: 10px; color: var(--text-3); font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+.rn-field input[type="text"], .rn-field input[type="number"], .rn-field input[type="date"],
+.rn-field textarea, .rn-field select {
+  padding: 12px 12px;
+  border: 1px solid var(--border);
+  background: rgba(0,0,0,0.28);
+  color: var(--text-1);
+  border-radius: 12px; font-family: inherit;
+  font-size: 14px;
+  -moz-appearance: textfield;
+}
+.rn-field select {
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%2387847B' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+}
+.rn-field textarea { resize: vertical; font-family: inherit; min-height: 44px; }
+.rn-field input:focus, .rn-field select:focus, .rn-field textarea:focus {
+  outline: none; border-color: rgba(255,255,255,0.40);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
+}
+.rn-field input[type="range"] { width: 100%; accent-color: var(--good); margin-top: 4px; }
+.rn-pace-live {
+  padding: 12px; border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03); border-radius: 12px;
+  font-family: var(--font-mono); font-size: 16px; font-weight: 700;
+  color: var(--good); text-align: center;
+}
+
+/* ----- Buttons ----- */
+.po-btn-primary {
+  width: 100%; padding: 14px;
+  border: 1px solid rgba(255,255,255,0.85);
+  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
+  color: #0a0a0b; border-radius: 12px;
+  font-family: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 14px rgba(0,0,0,0.40);
+  -webkit-tap-highlight-color: transparent;
+  margin-top: 4px;
+}
+.po-btn-primary:active { transform: scale(0.98); }
+.po-btn-secondary {
+  padding: 12px 18px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-1); border-radius: 12px;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.po-btn-secondary:hover { background: rgba(255,255,255,0.10); }
+
+/* ----- Modals ----- */
+.po-modal-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  z-index: 100; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.po-modal-bg.show { display: flex; }
+.po-modal {
+  width: 100%; max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  padding: 22px; max-height: 88vh; overflow-y: auto;
+}
+.po-modal h3 { margin: 0 0 16px; font-size: 17px; font-weight: 700; }
+.po-modal-actions { display: flex; gap: 8px; margin-top: 6px; }
+.po-modal-actions button { flex: 1; }
+.po-delete-link {
+  display: block; text-align: center; margin-top: 14px;
+  font-size: 12px; color: var(--bad); cursor: pointer;
+  text-decoration: underline; padding: 6px; border-radius: 8px;
+}
+.po-delete-link.is-confirm {
+  color: #0a0a0b; background: var(--bad); text-decoration: none; font-weight: 700;
+}
+.hidden { display: none !important; }
+
+/* ----- Week summary ----- */
+.rn-progress-track {
+  height: 10px; border-radius: 999px; background: rgba(255,255,255,0.06);
+  overflow: hidden; margin: 10px 0 6px;
+}
+.rn-progress-fill {
+  height: 100%; border-radius: 999px; transition: width 0.3s;
+  background: linear-gradient(90deg, var(--good), #34d399);
+}
+.rn-week-stats {
+  display: flex; justify-content: space-between;
+  font-size: 12.5px; color: var(--text-2); font-family: var(--font-mono);
+}
+.rn-compare {
+  margin-top: 12px; font-size: 12.5px; color: var(--text-2);
+}
+.rn-compare .up { color: var(--good); font-weight: 700; }
+.rn-compare .down { color: var(--bad); font-weight: 700; }
+
+/* ----- History ----- */
+.rn-empty { text-align: center; color: var(--text-3); font-size: 13px; padding: 18px 0; }
+.rn-run-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 4px; border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.rn-run-row:last-child { border-bottom: none; }
+.rn-run-row:hover { background: rgba(255,255,255,0.02); }
+.rn-run-date {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-3);
+  width: 40px; flex-shrink: 0; line-height: 1.3;
+}
+.rn-run-main { flex: 1; min-width: 0; }
+.rn-run-dist { font-weight: 700; font-size: 14.5px; color: var(--text-1); }
+.rn-run-meta { font-size: 11.5px; color: var(--text-3); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rn-run-tag {
+  font-size: 9.5px; padding: 3px 8px; border-radius: 999px;
+  background: rgba(255,255,255,0.06); color: var(--text-2);
+  text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ----- Shoes ----- */
+.rn-shoe-card {
+  padding: 12px; border: 1px solid var(--border); border-radius: 12px;
+  background: rgba(255,255,255,0.02); margin-bottom: 8px; cursor: pointer;
+}
+.rn-shoe-card:last-child { margin-bottom: 0; }
+.rn-shoe-card.is-retired { opacity: 0.5; }
+.rn-shoe-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.rn-shoe-name { font-weight: 700; font-size: 13.5px; }
+.rn-shoe-km { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-2); flex-shrink: 0; }
+.rn-shoe-warn { color: var(--warn); font-size: 11px; margin-top: 6px; }
+
+/* ----- Streaks ----- */
+.rn-streak-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rn-streak-box {
+  text-align: center; padding: 14px 6px; border-radius: 12px;
+  background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+}
+.rn-streak-num { font-size: 22px; font-weight: 800; font-family: var(--font-mono); }
+.rn-streak-label { font-size: 9.5px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px; line-height: 1.4; }
+
+/* ----- Totals table ----- */
+.rn-totals-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+.rn-totals-table th {
+  font-size: 9px; color: var(--text-3); text-transform: uppercase;
+  letter-spacing: 0.07em; font-weight: 700; padding: 4px; text-align: center;
+}
+.rn-totals-table th:first-child { text-align: left; }
+.rn-totals-table td {
+  padding: 7px 4px; text-align: center; font-family: var(--font-mono);
+  color: var(--text-1); border-top: 1px solid var(--border);
+}
+.rn-totals-table td:first-child { text-align: left; color: var(--text-3); font-family: inherit; font-size: 11px; }
+
+/* ----- PRs ----- */
+.rn-pr-row {
+  display: flex; justify-content: space-between; gap: 10px;
+  padding: 8px 2px; border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.rn-pr-row:last-child { border-bottom: none; }
+.rn-pr-label { color: var(--text-3); flex-shrink: 0; }
+.rn-pr-val { font-family: var(--font-mono); font-weight: 700; color: var(--text-1); text-align: right; }
+
+/* ----- Heatmap ----- */
+.rn-heatmap { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.rn-heatmap-header { margin-bottom: 4px; }
+.rn-heat-dow { font-size: 9px; color: var(--text-4); text-align: center; }
+.rn-heat-cell { aspect-ratio: 1; border-radius: 4px; }
+.rn-heat-today { box-shadow: inset 0 0 0 1.5px #ffffff; }
+
+/* ----- Badges ----- */
+.rn-badges-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 4px 0; }
+.rn-badge {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  opacity: 0.22; filter: grayscale(1);
+}
+.rn-badge.unlocked {
+  opacity: 1; filter: none;
+  background: rgba(251,191,36,0.12); border-color: rgba(251,191,36,0.30);
+}
+
+@media (max-width: 380px) {
+  .rn-grid2 { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .po-title { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="po-shell">
+  <div class="po-seg-control">
+    <a href="gym.html" class="po-seg-btn">Gym</a>
+    <a href="running.html" class="po-seg-btn active">Running</a>
+  </div>
+
+  <div class="po-header">
+    <h1 class="po-title">Running</h1>
+    <button class="po-icon-btn" id="rnSettingsBtn" type="button" aria-label="Metas">⚙️</button>
+  </div>
+
+  <!-- QUICK LOG -->
+  <div class="card">
+    <div class="section-title">Registrar carrera</div>
+    <form id="rnForm">
+      <div id="rnNewFields"></div>
+      <button class="po-btn-primary" type="submit">+ Registrar carrera</button>
+    </form>
+  </div>
+
+  <!-- WEEK SUMMARY -->
+  <div class="card">
+    <div class="section-title">Esta semana</div>
+    <div class="rn-progress-track"><div class="rn-progress-fill" id="rnWeekFill" style="width:0%"></div></div>
+    <div class="rn-week-stats">
+      <span id="rnWeekKmText">0 / 0 km</span>
+      <span id="rnWeekRunsText"></span>
+    </div>
+    <div class="rn-compare" id="rnCompare"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="card">
+    <div class="section-title">Historial</div>
+    <div id="rnHistoryList"></div>
+  </div>
+
+  <!-- SHOES -->
+  <div class="card">
+    <div class="section-title">Zapatillas</div>
+    <div id="rnShoeList"></div>
+    <button class="po-btn-secondary" id="rnAddShoeBtn" type="button" style="width:100%;margin-top:10px;">+ Nueva zapatilla</button>
+  </div>
+
+  <!-- STREAKS -->
+  <div class="card">
+    <div class="section-title">Rachas</div>
+    <div id="rnStreaks"></div>
+  </div>
+
+  <!-- TOTALS + PRs -->
+  <div class="card">
+    <div class="section-title">Totales</div>
+    <table class="rn-totals-table" id="rnTotalsTable"></table>
+    <div class="section-title" style="margin-top:4px;">Récords personales</div>
+    <div id="rnPRs"></div>
+  </div>
+
+  <!-- CHART -->
+  <div class="card">
+    <div class="section-title">Últimas carreras</div>
+    <div class="rn-empty hidden" id="rnChartEmpty">Aún no hay carreras para graficar.</div>
+    <svg id="rnChart" viewBox="0 0 300 90" preserveAspectRatio="none" style="width:100%;height:90px;display:block;"></svg>
+  </div>
+
+  <!-- HEATMAP -->
+  <div class="card">
+    <div class="section-title">Consistencia del mes</div>
+    <div id="rnHeatmap"></div>
+  </div>
+
+  <!-- BADGES -->
+  <div class="card">
+    <div class="section-title">Logros</div>
+    <div class="rn-badges-row" id="rnBadges"></div>
+  </div>
+</div>
+
+<!-- Goals settings modal -->
+<div class="po-modal-bg" id="rnGoalsModalBg">
+  <div class="po-modal">
+    <h3>Metas semanales</h3>
+    <div class="rn-field"><label>Km por semana</label><input type="number" id="rnGoalKm" step="0.5" min="0"></div>
+    <div class="rn-field"><label>Carreras por semana (opcional)</label><input type="number" id="rnGoalRuns" step="1" min="0" placeholder="—"></div>
+    <div class="po-modal-actions">
+      <button class="po-btn-secondary" id="rnGoalsCancel" type="button">Cancelar</button>
+      <button class="po-btn-primary" id="rnGoalsSave" type="button">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shoe modal -->
+<div class="po-modal-bg" id="rnShoeModalBg">
+  <div class="po-modal">
+    <h3 id="rnShoeModalTitle">Nueva zapatilla</h3>
+    <div class="rn-field"><label>Nombre / modelo</label><input type="text" id="rnShoeName" placeholder="Pegasus 40"></div>
+    <div class="rn-field"><label>Fecha de inicio</label><input type="date" id="rnShoeStart"></div>
+    <div class="rn-field"><label>Límite de vida (km)</label><input type="number" id="rnShoeLimit" step="10" min="0"></div>
+    <div class="po-modal-actions">
+      <button class="po-btn-secondary" id="rnShoeCancel" type="button">Cancelar</button>
+      <button class="po-btn-primary" id="rnShoeSave" type="button">Guardar</button>
+    </div>
+    <div class="po-delete-link hidden" id="rnShoeRetire">Marcar como retirada</div>
+  </div>
+</div>
+
+<!-- Edit run modal -->
+<div class="po-modal-bg" id="rnRunModalBg">
+  <div class="po-modal">
+    <h3>Editar carrera</h3>
+    <div id="rnEditFields"></div>
+    <div class="po-modal-actions">
+      <button class="po-btn-secondary" id="rnRunCancel" type="button">Cancelar</button>
+      <button class="po-btn-primary" id="rnRunSave" type="button">Guardar</button>
+    </div>
+    <div class="po-delete-link" id="rnRunDelete">Borrar carrera</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORAGE_KEY = 'running_v1';
+  var SHOE_LIFE_KM_DEFAULT = 600;
+  var RUN_TYPES = [
+    { key: 'easy', label: 'Fácil' },
+    { key: 'tempo', label: 'Tempo' },
+    { key: 'intervals', label: 'Intervalos' },
+    { key: 'long', label: 'Larga' },
+    { key: 'race', label: 'Competencia' }
+  ];
+  var STANDARD_DISTANCES = [
+    { key: '5k', km: 5, label: '5K' },
+    { key: '10k', km: 10, label: '10K' },
+    { key: '15k', km: 15, label: '15K' },
+    { key: '21k', km: 21.0975, label: 'Media maratón' },
+    { key: '42k', km: 42.195, label: 'Maratón' }
+  ];
+  var MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var DOW_LETTERS = ['L','M','X','J','V','S','D'];
+
+  var BADGES = [
+    { key: 'first_run', icon: '🎽', label: 'Primera carrera', test: function () { return state.runs.length >= 1; } },
+    { key: '5k', icon: '🏅', label: 'Primeros 5K', test: function () { return state.runs.some(function (r) { return r.distanceKm >= 5; }); } },
+    { key: '10k', icon: '🏅', label: 'Primeros 10K', test: function () { return state.runs.some(function (r) { return r.distanceKm >= 10; }); } },
+    { key: '21k', icon: '🏅', label: 'Primeros 21K', test: function () { return state.runs.some(function (r) { return r.distanceKm >= 21; }); } },
+    { key: '10_runs', icon: '🔥', label: '10 carreras', test: function () { return state.runs.length >= 10; } },
+    { key: '50_runs', icon: '🔥', label: '50 carreras', test: function () { return state.runs.length >= 50; } },
+    { key: '100_runs', icon: '🔥', label: '100 carreras', test: function () { return state.runs.length >= 100; } },
+    { key: '100km', icon: '🏆', label: '100 km acumulados', test: function () { return sumRuns(state.runs) >= 100; } },
+    { key: '500km', icon: '🏆', label: '500 km acumulados', test: function () { return sumRuns(state.runs) >= 500; } },
+    { key: '1000km', icon: '🏆', label: '1000 km acumulados', test: function () { return sumRuns(state.runs) >= 1000; } },
+    { key: 'streak7', icon: '📅', label: 'Racha de 7 días', test: function () { return computeDayStreakRecord() >= 7; } },
+    { key: 'streak30', icon: '📅', label: 'Racha de 30 días', test: function () { return computeDayStreakRecord() >= 30; } }
+  ];
+
+  function $(id) { return document.getElementById(id); }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // -------- Storage --------
+  function defaultState() {
+    return { goals: { weeklyKm: 20, weeklyRuns: null }, shoes: [], runs: [] };
+  }
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return defaultState();
+      var parsed = JSON.parse(raw);
+      var d = defaultState();
+      return {
+        goals: Object.assign({}, d.goals, parsed.goals || {}),
+        shoes: Array.isArray(parsed.shoes) ? parsed.shoes : [],
+        runs: Array.isArray(parsed.runs) ? parsed.runs : []
+      };
+    } catch (e) { return defaultState(); }
+  }
+  function saveState(s) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch (e) {}
+  }
+
+  var state = loadState();
+
+  // -------- Date helpers --------
+  function uid(prefix) { return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
+  function todayISO() { return isoOf(new Date()); }
+  function isoOf(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function parseISO(s) {
+    var parts = s.split('-').map(Number);
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+  function addDays(d, n) { var r = new Date(d); r.setDate(r.getDate() + n); return r; }
+  function mondayOf(d) { var day = (d.getDay() + 6) % 7; return addDays(d, -day); }
+  function weekKeyOf(dateStr) { return isoOf(mondayOf(parseISO(dateStr))); }
+
+  // -------- Duration / pace --------
+  function parseDuration(str) {
+    if (!str) return null;
+    var parts = str.trim().split(':').map(function (x) { return x.trim(); }).filter(function (x) { return x !== ''; });
+    if (!parts.length || parts.some(function (p) { return !/^\d+$/.test(p); })) return null;
+    var h = 0, m = 0, s = 0;
+    if (parts.length === 3) { h = Number(parts[0]); m = Number(parts[1]); s = Number(parts[2]); }
+    else if (parts.length === 2) { m = Number(parts[0]); s = Number(parts[1]); }
+    else if (parts.length === 1) { s = Number(parts[0]); }
+    else return null;
+    return h * 3600 + m * 60 + s;
+  }
+  function formatDuration(sec) {
+    if (sec == null || !isFinite(sec)) return '—';
+    sec = Math.round(sec);
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    return m + ':' + String(s).padStart(2, '0');
+  }
+  function paceSecPerKm(km, sec) {
+    if (!km || km <= 0 || !sec) return null;
+    return sec / km;
+  }
+  function formatPace(secPerKm) {
+    if (secPerKm == null || !isFinite(secPerKm)) return '—';
+    var m = Math.floor(secPerKm / 60), s = Math.round(secPerKm % 60);
+    if (s === 60) { m += 1; s = 0; }
+    return m + ':' + String(s).padStart(2, '0') + '/km';
+  }
+  function matchStandardDistance(km) {
+    for (var i = 0; i < STANDARD_DISTANCES.length; i++) {
+      var sd = STANDARD_DISTANCES[i];
+      if (Math.abs(km - sd.km) / sd.km <= 0.10) return sd;
+    }
+    return null;
+  }
+  function sumRuns(runs) { return runs.reduce(function (s, r) { return s + r.distanceKm; }, 0); }
+  function monthLabel(key) {
+    var parts = key.split('-'); var y = Number(parts[0]), m = Number(parts[1]);
+    return MONTHS_SHORT[m - 1] + ' ' + y;
+  }
+  function sortedRuns() {
+    return state.runs.slice().sort(function (a, b) {
+      return b.date.localeCompare(a.date) || (b.id || '').localeCompare(a.id || '');
+    });
+  }
+
+  // -------- Form field group (shared by quick-log + edit modal) --------
+  function fieldsHTML(p) {
+    var typeOpts = RUN_TYPES.map(function (t) { return '<option value="' + t.key + '">' + t.label + '</option>'; }).join('');
+    return (
+      '<div class="rn-grid2">' +
+        '<div class="rn-field"><label>Fecha</label><input type="date" id="' + p + 'Date"></div>' +
+        '<div class="rn-field"><label>Distancia (km)</label><input type="number" id="' + p + 'Dist" step="0.01" min="0" inputmode="decimal" placeholder="5.00"></div>' +
+      '</div>' +
+      '<div class="rn-grid2">' +
+        '<div class="rn-field"><label>Tiempo (mm:ss)</label><input type="text" id="' + p + 'Time" placeholder="25:30" inputmode="numeric"></div>' +
+        '<div class="rn-field"><label>Pace</label><div class="rn-pace-live" id="' + p + 'Pace">—</div></div>' +
+      '</div>' +
+      '<div class="rn-grid2">' +
+        '<div class="rn-field"><label>Tipo</label><select id="' + p + 'Type">' + typeOpts + '</select></div>' +
+        '<div class="rn-field"><label>Zapatilla</label><select id="' + p + 'Shoe"><option value="">—</option></select></div>' +
+      '</div>' +
+      '<div class="rn-field"><label>Esfuerzo (RPE) — <span id="' + p + 'RpeVal">5</span>/10</label>' +
+        '<input type="range" id="' + p + 'Rpe" min="1" max="10" step="1" value="5"></div>' +
+      '<div class="rn-field"><label>Ruta / lugar (opcional)</label><input type="text" id="' + p + 'Place" placeholder="Parque..."></div>' +
+      '<div class="rn-field"><label>Notas (opcional)</label><textarea id="' + p + 'Notes" rows="2" placeholder="Clima, sensaciones..."></textarea></div>'
+    );
+  }
+  function updatePaceLive(p) {
+    var dist = parseFloat($(p + 'Dist').value);
+    var dur = parseDuration($(p + 'Time').value.trim());
+    $(p + 'Pace').textContent = (dist > 0 && dur) ? formatPace(paceSecPerKm(dist, dur)) : '—';
+  }
+  function attachPaceListeners(p) {
+    $(p + 'Dist').addEventListener('input', function () { updatePaceLive(p); });
+    $(p + 'Time').addEventListener('input', function () { updatePaceLive(p); });
+    $(p + 'Rpe').addEventListener('input', function () { $(p + 'RpeVal').textContent = $(p + 'Rpe').value; });
+  }
+  function readFields(p) {
+    var date = $(p + 'Date').value || todayISO();
+    var distanceKm = parseFloat($(p + 'Dist').value);
+    if (!distanceKm || distanceKm <= 0) { alert('Ingresa una distancia válida.'); return null; }
+    var timeStr = $(p + 'Time').value.trim();
+    var durationSec = null;
+    if (timeStr) {
+      durationSec = parseDuration(timeStr);
+      if (durationSec == null) { alert('Formato de tiempo inválido. Usa mm:ss o hh:mm:ss.'); return null; }
+    }
+    return {
+      date: date,
+      distanceKm: distanceKm,
+      durationSec: durationSec,
+      type: $(p + 'Type').value,
+      rpe: parseInt($(p + 'Rpe').value, 10),
+      shoeId: $(p + 'Shoe').value || null,
+      place: $(p + 'Place').value.trim(),
+      notes: $(p + 'Notes').value.trim()
+    };
+  }
+  function writeFields(p, run) {
+    $(p + 'Date').value = run.date;
+    $(p + 'Dist').value = run.distanceKm;
+    $(p + 'Time').value = run.durationSec != null ? formatDuration(run.durationSec) : '';
+    $(p + 'Type').value = run.type;
+    $(p + 'Rpe').value = run.rpe || 5;
+    $(p + 'RpeVal').textContent = run.rpe || 5;
+    populateShoeSelect($(p + 'Shoe'), run.shoeId);
+    $(p + 'Place').value = run.place || '';
+    $(p + 'Notes').value = run.notes || '';
+    updatePaceLive(p);
+  }
+  function clearFields(p) {
+    $(p + 'Date').value = todayISO();
+    $(p + 'Dist').value = '';
+    $(p + 'Time').value = '';
+    $(p + 'Type').value = 'easy';
+    $(p + 'Rpe').value = 5;
+    $(p + 'RpeVal').textContent = '5';
+    populateShoeSelect($(p + 'Shoe'), null);
+    $(p + 'Place').value = '';
+    $(p + 'Notes').value = '';
+    updatePaceLive(p);
+  }
+  function populateShoeSelect(sel, selectedId) {
+    var cur = selectedId !== undefined ? selectedId : sel.value;
+    sel.innerHTML = '<option value="">—</option>' + state.shoes.map(function (s) {
+      return '<option value="' + s.id + '"' + (s.id === cur ? ' selected' : '') + '>' +
+        escapeHtml(s.name) + (s.retired ? ' (retirada)' : '') + '</option>';
+    }).join('');
+  }
+
+  // -------- Week / totals --------
+  function weekTotals(mondayKey) {
+    var runs = state.runs.filter(function (r) { return weekKeyOf(r.date) === mondayKey; });
+    return { km: sumRuns(runs), count: runs.length, runs: runs };
+  }
+  function currentMondayKey() { return weekKeyOf(todayISO()); }
+  function goalMet(t) {
+    var kmOk = state.goals.weeklyKm > 0 ? t.km >= state.goals.weeklyKm : true;
+    var runsOk = state.goals.weeklyRuns ? t.count >= state.goals.weeklyRuns : true;
+    return kmOk && runsOk;
+  }
+
+  function renderWeek() {
+    var curKey = currentMondayKey();
+    var prevKey = isoOf(addDays(parseISO(curKey), -7));
+    var cur = weekTotals(curKey);
+    var prev = weekTotals(prevKey);
+    var goalKm = state.goals.weeklyKm || 0;
+    var pct = goalKm > 0 ? Math.min(100, (cur.km / goalKm) * 100) : 0;
+    $('rnWeekFill').style.width = pct + '%';
+    $('rnWeekKmText').textContent = cur.km.toFixed(1) + ' / ' + goalKm.toFixed(1) + ' km';
+    $('rnWeekRunsText').textContent = state.goals.weeklyRuns
+      ? cur.count + ' / ' + state.goals.weeklyRuns + ' carreras'
+      : cur.count + ' carreras';
+
+    var cmp = $('rnCompare');
+    if (prev.km === 0 && cur.km === 0) {
+      cmp.innerHTML = 'Sin datos todavía esta semana.';
+    } else if (prev.km === 0) {
+      cmp.innerHTML = '¡Primeros km de la semana! (semana pasada: 0 km)';
+    } else {
+      var change = ((cur.km - prev.km) / prev.km) * 100;
+      var cls = change >= 0 ? 'up' : 'down';
+      var arrow = change >= 0 ? '↑' : '↓';
+      cmp.innerHTML = '<span class="' + cls + '">' + arrow + ' ' + Math.abs(change).toFixed(0) + '%</span> vs. semana pasada (' + prev.km.toFixed(1) + ' km)';
+    }
+  }
+
+  function renderTotals() {
+    var curKey = currentMondayKey();
+    var week = weekTotals(curKey);
+    var monthKey = todayISO().slice(0, 7);
+    var monthRuns = state.runs.filter(function (r) { return r.date.slice(0, 7) === monthKey; });
+    var month = { km: sumRuns(monthRuns), count: monthRuns.length, sec: monthRuns.reduce(function (s, r) { return s + (r.durationSec || 0); }, 0) };
+    var weekSec = week.runs.reduce(function (s, r) { return s + (r.durationSec || 0); }, 0);
+    var all = { km: sumRuns(state.runs), count: state.runs.length, sec: state.runs.reduce(function (s, r) { return s + (r.durationSec || 0); }, 0) };
+
+    $('rnTotalsTable').innerHTML =
+      '<tr><th></th><th>Semana</th><th>Mes</th><th>Histórico</th></tr>' +
+      '<tr><td>Km</td><td>' + week.km.toFixed(1) + '</td><td>' + month.km.toFixed(1) + '</td><td>' + all.km.toFixed(1) + '</td></tr>' +
+      '<tr><td>Carreras</td><td>' + week.count + '</td><td>' + month.count + '</td><td>' + all.count + '</td></tr>' +
+      '<tr><td>Tiempo</td><td>' + formatDuration(weekSec) + '</td><td>' + formatDuration(month.sec) + '</td><td>' + formatDuration(all.sec) + '</td></tr>';
+  }
+
+  // -------- Streaks --------
+  function computeWeekStreak() {
+    var earliestKey = state.runs.length ? weekKeyOf(state.runs.reduce(function (min, r) { return r.date < min ? r.date : min; }, state.runs[0].date)) : currentMondayKey();
+    var cursor = currentMondayKey();
+    var streak = 0;
+    if (goalMet(weekTotals(cursor))) { streak++; cursor = isoOf(addDays(parseISO(cursor), -7)); }
+    else { cursor = isoOf(addDays(parseISO(cursor), -7)); }
+    while (cursor >= earliestKey && goalMet(weekTotals(cursor))) {
+      streak++;
+      cursor = isoOf(addDays(parseISO(cursor), -7));
+    }
+    return streak;
+  }
+  function computeWeekStreakRecord() {
+    if (!state.runs.length) return 0;
+    var earliest = state.runs.reduce(function (min, r) { return r.date < min ? r.date : min; }, state.runs[0].date);
+    var cursor = weekKeyOf(earliest);
+    var cur = currentMondayKey();
+    var best = 0, run = 0;
+    var guard = 0;
+    while (cursor <= cur && guard < 2000) {
+      if (goalMet(weekTotals(cursor))) { run++; best = Math.max(best, run); } else { run = 0; }
+      cursor = isoOf(addDays(parseISO(cursor), 7));
+      guard++;
+    }
+    return Math.max(best, computeWeekStreak());
+  }
+  function runDatesSet() { return new Set(state.runs.map(function (r) { return r.date; })); }
+  function computeDayStreak() {
+    var dates = runDatesSet();
+    var cursor = new Date();
+    var streak = 0;
+    if (dates.has(isoOf(cursor))) { streak = 1; cursor = addDays(cursor, -1); }
+    else { cursor = addDays(cursor, -1); }
+    while (dates.has(isoOf(cursor))) { streak++; cursor = addDays(cursor, -1); }
+    return streak;
+  }
+  function computeDayStreakRecord() {
+    if (!state.runs.length) return 0;
+    var dates = Array.from(runDatesSet()).sort();
+    var best = 1, run = 1;
+    for (var i = 1; i < dates.length; i++) {
+      var diff = Math.round((parseISO(dates[i]) - parseISO(dates[i - 1])) / 86400000);
+      if (diff === 1) { run++; } else if (diff !== 0) { run = 1; }
+      best = Math.max(best, run);
+    }
+    return Math.max(best, computeDayStreak());
+  }
+
+  function renderStreaks() {
+    var curDay = computeDayStreak(), recDay = computeDayStreakRecord();
+    var curWeek = computeWeekStreak(), recWeek = computeWeekStreakRecord();
+    $('rnStreaks').innerHTML =
+      '<div class="rn-streak-grid">' +
+        '<div class="rn-streak-box"><div class="rn-streak-num">🔥 ' + curDay + '</div><div class="rn-streak-label">Días activos<br>récord ' + recDay + '</div></div>' +
+        '<div class="rn-streak-box"><div class="rn-streak-num">📅 ' + curWeek + '</div><div class="rn-streak-label">Semanas de meta<br>récord ' + recWeek + '</div></div>' +
+      '</div>';
+  }
+
+  // -------- History --------
+  function renderHistory() {
+    var list = sortedRuns();
+    var wrap = $('rnHistoryList');
+    if (!list.length) { wrap.innerHTML = '<div class="rn-empty">Sin carreras registradas todavía.</div>'; return; }
+    wrap.innerHTML = list.map(function (r) {
+      var shoe = state.shoes.find(function (s) { return s.id === r.shoeId; });
+      var pace = r.durationSec ? formatPace(paceSecPerKm(r.distanceKm, r.durationSec)) : '—';
+      var typeLabel = (RUN_TYPES.find(function (t) { return t.key === r.type; }) || {}).label || r.type;
+      var d = parseISO(r.date);
+      var dayLabel = String(d.getDate()).padStart(2, '0') + ' ' + MONTHS_SHORT[d.getMonth()];
+      var metaBits = [];
+      if (r.durationSec) metaBits.push(formatDuration(r.durationSec));
+      if (shoe) metaBits.push(escapeHtml(shoe.name));
+      if (r.place) metaBits.push(escapeHtml(r.place));
+      return (
+        '<div class="rn-run-row" data-id="' + r.id + '">' +
+          '<div class="rn-run-date">' + dayLabel + '</div>' +
+          '<div class="rn-run-main">' +
+            '<div class="rn-run-dist">' + r.distanceKm.toFixed(2) + ' km · ' + pace + '</div>' +
+            '<div class="rn-run-meta">' + metaBits.join(' · ') + '</div>' +
+          '</div>' +
+          '<div class="rn-run-tag">' + escapeHtml(typeLabel) + '</div>' +
+        '</div>'
+      );
+    }).join('');
+    wrap.querySelectorAll('.rn-run-row').forEach(function (row) {
+      row.addEventListener('click', function () { openRunModal(row.dataset.id); });
+    });
+  }
+
+  // -------- Shoes --------
+  function shoeKm(shoeId) {
+    return sumRuns(state.runs.filter(function (r) { return r.shoeId === shoeId; }));
+  }
+  function renderShoes() {
+    var wrap = $('rnShoeList');
+    if (!state.shoes.length) { wrap.innerHTML = '<div class="rn-empty">Sin zapatillas registradas.</div>'; return; }
+    wrap.innerHTML = state.shoes.map(function (sh) {
+      var km = shoeKm(sh.id);
+      var limit = sh.limitKm || SHOE_LIFE_KM_DEFAULT;
+      var pct = Math.min(100, (km / limit) * 100);
+      var warnFlag = !sh.retired && km >= limit * 0.9;
+      return (
+        '<div class="rn-shoe-card' + (sh.retired ? ' is-retired' : '') + '" data-id="' + sh.id + '">' +
+          '<div class="rn-shoe-top"><span class="rn-shoe-name">' + escapeHtml(sh.name) + (sh.retired ? ' · retirada' : '') + '</span>' +
+          '<span class="rn-shoe-km">' + km.toFixed(0) + ' / ' + limit + ' km</span></div>' +
+          '<div class="rn-progress-track"><div class="rn-progress-fill" style="width:' + pct + '%;' + (warnFlag ? 'background:var(--warn);' : '') + '"></div></div>' +
+          (warnFlag ? '<div class="rn-shoe-warn">⚠ Cerca del límite de vida útil — considera reemplazarla</div>' : '') +
+        '</div>'
+      );
+    }).join('');
+    wrap.querySelectorAll('.rn-shoe-card').forEach(function (c) {
+      c.addEventListener('click', function () { openShoeModal(c.dataset.id); });
+    });
+  }
+
+  // -------- PRs --------
+  function bestPaceOverall() {
+    var best = null;
+    state.runs.forEach(function (r) {
+      if (!r.durationSec) return;
+      var p = paceSecPerKm(r.distanceKm, r.durationSec);
+      if (p != null && (!best || p < best.pace)) best = { pace: p, run: r };
+    });
+    return best;
+  }
+  function longestRun() {
+    if (!state.runs.length) return null;
+    return state.runs.reduce(function (m, r) { return (!m || r.distanceKm > m.distanceKm) ? r : m; }, null);
+  }
+  function bestForStandard(sd) {
+    var best = null;
+    state.runs.forEach(function (r) {
+      if (!r.durationSec) return;
+      var match = matchStandardDistance(r.distanceKm);
+      if (match && match.key === sd.key) {
+        if (!best || r.durationSec < best.durationSec) best = r;
+      }
+    });
+    return best;
+  }
+  function bestMonth() {
+    var map = {};
+    state.runs.forEach(function (r) {
+      var k = r.date.slice(0, 7);
+      map[k] = (map[k] || 0) + r.distanceKm;
+    });
+    var bestKey = null, bestKm = 0;
+    Object.keys(map).forEach(function (k) { if (map[k] > bestKm) { bestKm = map[k]; bestKey = k; } });
+    return bestKey ? { key: bestKey, km: bestKm } : null;
+  }
+  function prRow(label, val) {
+    return '<div class="rn-pr-row"><span class="rn-pr-label">' + escapeHtml(label) + '</span><span class="rn-pr-val">' + escapeHtml(val) + '</span></div>';
+  }
+  function renderPRs() {
+    var bp = bestPaceOverall();
+    var lr = longestRun();
+    var bm = bestMonth();
+    var rows = '';
+    rows += prRow('Mejor pace', bp ? formatPace(bp.pace) : '—');
+    rows += prRow('Carrera más larga', lr ? lr.distanceKm.toFixed(2) + ' km' : '—');
+    STANDARD_DISTANCES.forEach(function (sd) {
+      var b = bestForStandard(sd);
+      rows += prRow(sd.label, b ? formatDuration(b.durationSec) + ' (' + formatPace(paceSecPerKm(b.distanceKm, b.durationSec)) + ')' : '—');
+    });
+    rows += prRow('Mejor mes', bm ? monthLabel(bm.key) + ' · ' + bm.km.toFixed(1) + ' km' : '—');
+    $('rnPRs').innerHTML = rows;
+  }
+
+  // -------- Chart --------
+  function renderChart() {
+    var svg = $('rnChart');
+    var runs = sortedRuns().slice(0, 10).reverse();
+    if (!runs.length) {
+      $('rnChartEmpty').classList.remove('hidden');
+      svg.classList.add('hidden');
+      svg.innerHTML = '';
+      return;
+    }
+    $('rnChartEmpty').classList.add('hidden');
+    svg.classList.remove('hidden');
+    var w = 300, h = 90, gap = 4;
+    var barW = (w - gap * (runs.length - 1)) / runs.length;
+    var max = Math.max.apply(null, runs.map(function (r) { return r.distanceKm; }).concat([1]));
+    var bars = runs.map(function (r, i) {
+      var bh = Math.max(2, (r.distanceKm / max) * (h - 4));
+      var x = i * (barW + gap);
+      var y = h - bh;
+      return '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2" fill="#6ee7b7" fill-opacity="0.85"><title>' + r.date + ' · ' + r.distanceKm.toFixed(1) + ' km</title></rect>';
+    }).join('');
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    svg.innerHTML = bars;
+  }
+
+  // -------- Heatmap --------
+  function renderHeatmap() {
+    var wrap = $('rnHeatmap');
+    var now = new Date();
+    var year = now.getFullYear(), month = now.getMonth();
+    var firstOfMonth = new Date(year, month, 1);
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var monthKey = isoOf(firstOfMonth).slice(0, 7);
+    var kmByDay = {};
+    state.runs.forEach(function (r) {
+      if (r.date.slice(0, 7) === monthKey) kmByDay[r.date] = (kmByDay[r.date] || 0) + r.distanceKm;
+    });
+    var maxKm = Math.max.apply(null, Object.keys(kmByDay).map(function (k) { return kmByDay[k]; }).concat([1]));
+    var startOffset = (firstOfMonth.getDay() + 6) % 7;
+    var header = DOW_LETTERS.map(function (d) { return '<div class="rn-heat-dow">' + d + '</div>'; }).join('');
+    var cells = '';
+    for (var i = 0; i < startOffset; i++) cells += '<div class="rn-heat-cell" style="background:transparent;"></div>';
+    for (var day = 1; day <= daysInMonth; day++) {
+      var key = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+      var km = kmByDay[key] || 0;
+      var isToday = key === todayISO();
+      var bg = km > 0 ? 'rgba(110,231,183,' + Math.min(1, 0.18 + (km / maxKm) * 0.82).toFixed(2) + ')' : 'rgba(255,255,255,0.04)';
+      cells += '<div class="rn-heat-cell' + (isToday ? ' rn-heat-today' : '') + '" style="background:' + bg + '" title="' + key + ': ' + km.toFixed(1) + ' km"></div>';
+    }
+    wrap.innerHTML =
+      '<div class="rn-heatmap rn-heatmap-header">' + header + '</div>' +
+      '<div class="rn-heatmap">' + cells + '</div>';
+  }
+
+  // -------- Badges --------
+  function renderBadges() {
+    $('rnBadges').innerHTML = BADGES.map(function (b) {
+      var unlocked = b.test();
+      return '<div class="rn-badge' + (unlocked ? ' unlocked' : '') + '" title="' + escapeHtml(b.label) + '">' + b.icon + '</div>';
+    }).join('');
+  }
+
+  // -------- Goals modal --------
+  function openGoalsModal() {
+    $('rnGoalKm').value = state.goals.weeklyKm || '';
+    $('rnGoalRuns').value = state.goals.weeklyRuns || '';
+    $('rnGoalsModalBg').classList.add('show');
+  }
+  function closeGoalsModal() { $('rnGoalsModalBg').classList.remove('show'); }
+  function saveGoals() {
+    state.goals.weeklyKm = parseFloat($('rnGoalKm').value) || 0;
+    var runsVal = $('rnGoalRuns').value.trim();
+    state.goals.weeklyRuns = runsVal ? parseInt(runsVal, 10) : null;
+    saveState(state);
+    closeGoalsModal();
+    renderAll();
+  }
+
+  // -------- Shoe modal --------
+  var editingShoeId = null;
+  function openShoeModal(id) {
+    editingShoeId = id;
+    if (id) {
+      var sh = state.shoes.find(function (s) { return s.id === id; });
+      if (!sh) return;
+      $('rnShoeModalTitle').textContent = 'Editar zapatilla';
+      $('rnShoeName').value = sh.name;
+      $('rnShoeStart').value = sh.startDate;
+      $('rnShoeLimit').value = sh.limitKm || SHOE_LIFE_KM_DEFAULT;
+      $('rnShoeRetire').classList.remove('hidden');
+      $('rnShoeRetire').textContent = sh.retired ? 'Reactivar zapatilla' : 'Marcar como retirada';
+    } else {
+      $('rnShoeModalTitle').textContent = 'Nueva zapatilla';
+      $('rnShoeName').value = '';
+      $('rnShoeStart').value = todayISO();
+      $('rnShoeLimit').value = SHOE_LIFE_KM_DEFAULT;
+      $('rnShoeRetire').classList.add('hidden');
+    }
+    $('rnShoeModalBg').classList.add('show');
+  }
+  function closeShoeModal() { $('rnShoeModalBg').classList.remove('show'); editingShoeId = null; }
+  function saveShoe() {
+    var name = $('rnShoeName').value.trim();
+    if (!name) { alert('Ponle un nombre a la zapatilla.'); return; }
+    var startDate = $('rnShoeStart').value || todayISO();
+    var limitKm = parseFloat($('rnShoeLimit').value) || SHOE_LIFE_KM_DEFAULT;
+    if (editingShoeId) {
+      var sh = state.shoes.find(function (s) { return s.id === editingShoeId; });
+      if (sh) { sh.name = name; sh.startDate = startDate; sh.limitKm = limitKm; }
+    } else {
+      state.shoes.unshift({ id: uid('shoe'), name: name, startDate: startDate, limitKm: limitKm, retired: false });
+    }
+    saveState(state);
+    closeShoeModal();
+    renderAll();
+  }
+  function toggleRetireShoe() {
+    if (!editingShoeId) return;
+    var sh = state.shoes.find(function (s) { return s.id === editingShoeId; });
+    if (!sh) return;
+    sh.retired = !sh.retired;
+    saveState(state);
+    closeShoeModal();
+    renderAll();
+  }
+
+  // -------- Run modal (edit/delete) --------
+  var editingRunId = null;
+  var deleteConfirmPending = false;
+  function resetDeleteConfirm() {
+    deleteConfirmPending = false;
+    $('rnRunDelete').textContent = 'Borrar carrera';
+    $('rnRunDelete').classList.remove('is-confirm');
+  }
+  function openRunModal(id) {
+    var r = state.runs.find(function (x) { return x.id === id; });
+    if (!r) return;
+    editingRunId = id;
+    writeFields('rnEdit', r);
+    resetDeleteConfirm();
+    $('rnRunModalBg').classList.add('show');
+  }
+  function closeRunModal() { $('rnRunModalBg').classList.remove('show'); editingRunId = null; }
+  function saveEditedRun() {
+    var updated = readFields('rnEdit');
+    if (!updated) return;
+    updated.id = editingRunId;
+    var idx = state.runs.findIndex(function (r) { return r.id === editingRunId; });
+    if (idx > -1) state.runs[idx] = updated;
+    saveState(state);
+    closeRunModal();
+    renderAll();
+  }
+  function onDeleteRunClick() {
+    var btn = $('rnRunDelete');
+    if (!deleteConfirmPending) {
+      deleteConfirmPending = true;
+      btn.textContent = '¿Seguro? Toca de nuevo para borrar';
+      btn.classList.add('is-confirm');
+      setTimeout(function () {
+        if (deleteConfirmPending) resetDeleteConfirm();
+      }, 3000);
+      return;
+    }
+    state.runs = state.runs.filter(function (r) { return r.id !== editingRunId; });
+    saveState(state);
+    closeRunModal();
+    renderAll();
+  }
+
+  // -------- New run submit --------
+  function onSubmitNewRun(e) {
+    e.preventDefault();
+    var run = readFields('rnNew');
+    if (!run) return;
+    run.id = uid('run');
+    state.runs.unshift(run);
+    saveState(state);
+    clearFields('rnNew');
+    renderAll();
+  }
+
+  // -------- Boot --------
+  function renderAll() {
+    populateShoeSelect($('rnNewShoe'));
+    populateShoeSelect($('rnEditShoe'));
+    renderWeek();
+    renderHistory();
+    renderShoes();
+    renderStreaks();
+    renderTotals();
+    renderPRs();
+    renderChart();
+    renderHeatmap();
+    renderBadges();
+  }
+
+  function boot() {
+    $('rnNewFields').innerHTML = fieldsHTML('rnNew');
+    $('rnEditFields').innerHTML = fieldsHTML('rnEdit');
+    attachPaceListeners('rnNew');
+    attachPaceListeners('rnEdit');
+
+    $('rnForm').addEventListener('submit', onSubmitNewRun);
+    $('rnSettingsBtn').addEventListener('click', openGoalsModal);
+    $('rnGoalsCancel').addEventListener('click', closeGoalsModal);
+    $('rnGoalsSave').addEventListener('click', saveGoals);
+    $('rnAddShoeBtn').addEventListener('click', function () { openShoeModal(null); });
+    $('rnShoeCancel').addEventListener('click', closeShoeModal);
+    $('rnShoeSave').addEventListener('click', saveShoe);
+    $('rnShoeRetire').addEventListener('click', toggleRetireShoe);
+    $('rnRunCancel').addEventListener('click', closeRunModal);
+    $('rnRunSave').addEventListener('click', saveEditedRun);
+    $('rnRunDelete').addEventListener('click', onDeleteRunClick);
+
+    clearFields('rnNew');
+    renderAll();
+
+    window.addEventListener('storage', function () { state = loadState(); renderAll(); });
+  }
+
+  window.rnRenderAll = function () { state = loadState(); renderAll(); };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof initCloudSync !== 'function') return;
+  initCloudSync({
+    appKey: 'running',
+    syncedKeys: ['running_v1'],
+    onApplied: function () {
+      if (typeof window.rnRenderAll === 'function') window.rnRenderAll();
+    }
+  });
+});
+</script>
+
+</body>
+</html>
