@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050506">
+<title>Lectura — ACJ DASHB</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="sync.js" defer></script>
+<script src="topbar.js" defer></script>
+<style>
+:root {
+  --bg: #050506;
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-input: rgba(0, 0, 0, 0.28);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text-primary: #FAFAFA;
+  --text-secondary: #B8B6B0;
+  --text-tertiary: #76746E;
+  --accent: #1D9E75;
+  --accent-glow: rgba(29, 158, 117, 0.35);
+  --warning: #F2C063;
+  --bad: #FF6B6B;
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body { min-height: 100vh; position: relative; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(60% 50% at 82% 14%, rgba(224, 118, 88, 0.16) 0%, transparent 60%),
+    radial-gradient(50% 40% at 18% 90%, rgba(180, 180, 200, 0.06) 0%, transparent 60%);
+  filter: blur(40px);
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: ''; position: fixed; inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.014) 1px, transparent 1px);
+  background-size: 3px 3px;
+  pointer-events: none; z-index: 1;
+}
+main {
+  position: relative; z-index: 2;
+  max-width: 720px; margin: 0 auto;
+  padding: 56px 20px 100px;
+  padding-top: max(56px, env(safe-area-inset-top, 56px));
+}
+
+/* ----- Sub-nav (shared visual w/ learn.html) ----- */
+.lrn-subnav {
+  display: flex; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 4px; gap: 3px; margin-bottom: 18px;
+}
+.lrn-seg-btn {
+  flex: 1; padding: 10px 8px; border: none; background: transparent;
+  color: var(--text-tertiary); border-radius: 8px;
+  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none; display: flex; align-items: center; justify-content: center;
+}
+.lrn-seg-btn.active {
+  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
+  color: #0a0a0b;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 12px rgba(0,0,0,0.35);
+}
+.lrn-seg-btn.disabled { opacity: 0.4; cursor: default; }
+
+.rd-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.rd-title {
+  margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 120%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+}
+.rd-icon-btn {
+  width: 38px; height: 38px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text-secondary); cursor: pointer; font-size: 18px;
+  -webkit-tap-highlight-color: transparent;
+}
+.rd-icon-btn:hover { background: rgba(255,255,255,0.08); }
+
+.stack-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+}
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 0 0 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.section-title::before { content: '≡'; font-size: 14px; opacity: 0.5; margin-right: -2px; }
+.section-title-txt { display: flex; align-items: center; gap: 10px; }
+
+/* ----- Yearly goal ----- */
+.rd-goal-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.rd-goal-count { font-size: 30px; font-weight: 800; color: var(--text-primary); font-family: var(--font-mono); }
+.rd-goal-of { font-size: 14px; color: var(--text-tertiary); font-family: var(--font-mono); }
+.rd-progress-track { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; margin: 10px 0; }
+.rd-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #34d399); border-radius: 999px; }
+.rd-pace { font-size: 11.5px; color: var(--text-tertiary); margin-top: 6px; }
+.rd-year-breakdown { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.rd-year-chip {
+  font-family: var(--font-mono); font-size: 11px; padding: 4px 10px; border-radius: 999px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text-secondary);
+}
+
+/* ----- Search + tabs ----- */
+.rd-search {
+  width: 100%; padding: 11px 12px; margin-bottom: 12px;
+  border: 1px solid var(--border); background: var(--bg-input); color: var(--text-primary);
+  border-radius: 12px; font-family: inherit; font-size: 13.5px;
+}
+.rd-search:focus { outline: none; border-color: rgba(255,255,255,0.35); }
+.rd-tabs {
+  display: flex; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 12px; padding: 4px; gap: 3px; margin-bottom: 14px;
+}
+.rd-tab-btn {
+  flex: 1; padding: 9px 4px; border: none; background: transparent;
+  color: var(--text-tertiary); border-radius: 8px;
+  font-family: inherit; font-size: 11.5px; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.rd-tab-btn.active {
+  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
+  color: #0a0a0b;
+}
+.rd-sort-row { display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 10px; }
+.rd-sort-btn {
+  font-size: 10.5px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03); color: var(--text-tertiary); cursor: pointer;
+  font-family: inherit; -webkit-tap-highlight-color: transparent;
+}
+.rd-sort-btn.active { color: var(--text-primary); border-color: var(--border-strong); background: rgba(255,255,255,0.07); }
+
+/* ----- Book cards ----- */
+.rd-book-card {
+  display: flex; gap: 12px; padding: 12px; border-radius: 14px;
+  background: var(--bg-input); border: 1px solid var(--border); margin-bottom: 10px;
+}
+.rd-book-card:last-child { margin-bottom: 0; }
+.rd-cover {
+  width: 52px; height: 74px; border-radius: 6px; flex-shrink: 0;
+  background: linear-gradient(160deg, rgba(224,118,88,0.35), rgba(60,60,70,0.6));
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+  background-size: cover; background-position: center; overflow: hidden;
+}
+.rd-book-main { flex: 1; min-width: 0; }
+.rd-book-title { font-weight: 700; font-size: 14px; color: var(--text-primary); line-height: 1.3; }
+.rd-book-author { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.rd-book-tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.rd-book-tag {
+  font-size: 9.5px; padding: 2px 7px; border-radius: 999px; background: rgba(255,255,255,0.05);
+  color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700;
+}
+.rd-stars { color: var(--warning); font-size: 12px; letter-spacing: 1px; margin-top: 4px; }
+.rd-progress-mini-track { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; margin: 8px 0 6px; }
+.rd-progress-mini-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #34d399); border-radius: 999px; }
+.rd-progress-label { font-size: 10.5px; color: var(--text-tertiary); font-family: var(--font-mono); }
+.rd-stepper { display: flex; align-items: center; gap: 5px; margin-top: 8px; }
+.rd-step-btn {
+  width: 28px; height: 26px; border-radius: 7px; border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04); color: var(--text-secondary); font-size: 11px; font-weight: 700;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.rd-step-btn:hover { background: rgba(255,255,255,0.09); }
+.rd-book-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.rd-book-actions button {
+  padding: 6px 9px; border-radius: 8px; border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03); color: var(--text-secondary);
+  font-family: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.rd-book-actions button:hover { background: rgba(255,255,255,0.08); }
+.rd-empty { text-align: center; color: var(--text-tertiary); font-size: 12.5px; padding: 16px 0; }
+
+/* ----- Wishlist ----- */
+.rd-wish-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.rd-wish-row:last-child { border-bottom: none; }
+.rd-wish-main { flex: 1; min-width: 0; }
+.rd-wish-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.rd-wish-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.rd-wish-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.rd-wish-actions button {
+  padding: 6px 9px; border-radius: 8px; border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03); color: var(--text-secondary);
+  font-family: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ----- Buttons ----- */
+.rd-btn-primary {
+  padding: 13px; border: none; border-radius: 12px;
+  background: linear-gradient(180deg, var(--accent) 0%, #17805f 100%);
+  color: #fff; font-family: inherit; font-size: 13.5px; font-weight: 700;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+.rd-btn-secondary {
+  padding: 13px; border: 1px solid var(--border-strong); border-radius: 12px;
+  background: rgba(255,255,255,0.04); color: var(--text-primary);
+  font-family: inherit; font-size: 13.5px; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.rd-btn-secondary:hover { background: rgba(255,255,255,0.08); }
+.rd-btn-danger { color: var(--bad); }
+
+/* ----- Fields (modals) ----- */
+.rd-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.rd-field:last-child { margin-bottom: 0; }
+.rd-field > label { font-size: 10px; color: var(--text-tertiary); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.rd-field input[type="text"], .rd-field input[type="number"], .rd-field input[type="date"],
+.rd-field select, .rd-field textarea {
+  padding: 12px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-primary);
+  border-radius: 12px; font-family: inherit; font-size: 14px;
+}
+.rd-field textarea { resize: vertical; min-height: 60px; font-family: inherit; }
+.rd-field input:focus, .rd-field select:focus, .rd-field textarea:focus { outline: none; border-color: rgba(255,255,255,0.35); }
+.rd-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rd-star-picker { display: flex; gap: 6px; font-size: 26px; }
+.rd-star-picker span { cursor: pointer; color: rgba(255,255,255,0.15); -webkit-tap-highlight-color: transparent; }
+.rd-star-picker span.on { color: var(--warning); }
+
+/* ----- Modals ----- */
+.rd-modal-bg {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.rd-modal-bg.show { display: flex; }
+.rd-modal {
+  width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto;
+  background: #101012; border: 1px solid var(--border-strong);
+  border-radius: 16px; padding: 20px;
+}
+.rd-modal h3 { margin: 0 0 14px; font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.rd-modal-actions { display: flex; gap: 8px; margin-top: 8px; }
+.rd-modal-actions button { flex: 1; }
+.hidden { display: none !important; }
+
+@media (max-width: 480px) {
+  main { padding-top: max(40px, env(safe-area-inset-top, 40px)); }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="lrn-subnav">
+    <a href="japanese.html" class="lrn-seg-btn">Japonés</a>
+    <a href="reading.html" class="lrn-seg-btn active">Lectura</a>
+    <span class="lrn-seg-btn disabled" title="Próximamente">Música</span>
+  </div>
+
+  <div class="rd-header">
+    <h1 class="rd-title">Lectura</h1>
+    <button class="rd-icon-btn" id="rdAddBookBtn" type="button" aria-label="Nuevo libro">+</button>
+  </div>
+
+  <div class="stack-card">
+    <div class="section-title">
+      <span class="section-title-txt">Meta anual</span>
+      <span style="cursor:pointer;" id="rdEditGoalBtn">✎</span>
+    </div>
+    <div class="rd-goal-row">
+      <span class="rd-goal-count" id="rdGoalCount">0</span>
+      <span class="rd-goal-of" id="rdGoalOf">/ 20 libros este año</span>
+    </div>
+    <div class="rd-progress-track"><div class="rd-progress-fill" id="rdGoalFill" style="width:0%"></div></div>
+    <div class="rd-pace" id="rdPace"></div>
+    <div class="rd-year-breakdown" id="rdYearBreakdown"></div>
+  </div>
+
+  <input type="text" class="rd-search hidden" id="rdSearch" placeholder="Buscar por título o autor...">
+
+  <div class="rd-tabs" id="rdTabs">
+    <button class="rd-tab-btn active" data-tab="reading">Leyendo</button>
+    <button class="rd-tab-btn" data-tab="finished">Terminados</button>
+    <button class="rd-tab-btn" data-tab="to_read">Por leer</button>
+    <button class="rd-tab-btn" data-tab="abandoned">Abandonados</button>
+  </div>
+
+  <div class="stack-card">
+    <div class="rd-sort-row hidden" id="rdSortRow">
+      <button class="rd-sort-btn active" data-sort="date">Fecha</button>
+      <button class="rd-sort-btn" data-sort="rating">Rating</button>
+    </div>
+    <div id="rdBookList"></div>
+  </div>
+
+  <div class="stack-card">
+    <div class="section-title-txt section-title" style="margin-bottom:10px;"><span class="section-title-txt">Quiero leer</span></div>
+    <div id="rdWishlist"></div>
+    <button class="rd-btn-secondary" id="rdAddWishBtn" type="button" style="width:100%;margin-top:10px;">+ Agregar a wishlist</button>
+  </div>
+</main>
+
+<!-- Book add/edit modal -->
+<div class="rd-modal-bg" id="rdBookModalBg">
+  <div class="rd-modal">
+    <h3 id="rdBookModalTitle">Nuevo libro</h3>
+    <div class="rd-field"><label>Título</label><input type="text" id="rdFTitle" placeholder="Norwegian Wood"></div>
+    <div class="rd-field"><label>Autor</label><input type="text" id="rdFAuthor" placeholder="Haruki Murakami"></div>
+    <div class="rd-grid2">
+      <div class="rd-field"><label>Género</label>
+        <input type="text" id="rdFGenre" list="rdGenreList" placeholder="Ficción">
+        <datalist id="rdGenreList">
+          <option value="Ficción"><option value="No ficción"><option value="Ensayo">
+          <option value="Biografía"><option value="Poesía"><option value="Fantasía">
+          <option value="Ciencia ficción"><option value="Historia">
+        </datalist>
+      </div>
+      <div class="rd-field"><label>Estado</label>
+        <select id="rdFStatus">
+          <option value="to_read">Por leer</option>
+          <option value="reading">Leyendo</option>
+          <option value="finished">Terminado</option>
+          <option value="abandoned">Abandonado</option>
+        </select>
+      </div>
+    </div>
+    <div class="rd-grid2">
+      <div class="rd-field"><label>Página actual</label><input type="number" id="rdFCurrentPage" min="0" step="1" value="0"></div>
+      <div class="rd-field"><label>Total de páginas</label><input type="number" id="rdFTotalPages" min="0" step="1" value="0"></div>
+    </div>
+    <div class="rd-grid2">
+      <div class="rd-field"><label>Fecha de inicio</label><input type="date" id="rdFStartDate"></div>
+      <div class="rd-field"><label>Fecha de fin</label><input type="date" id="rdFFinishDate"></div>
+    </div>
+    <div class="rd-field"><label>Portada (URL, opcional)</label><input type="text" id="rdFCover" placeholder="https://..."></div>
+    <div class="rd-field"><label>Valoración</label>
+      <div class="rd-star-picker" id="rdFStars">
+        <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+      </div>
+    </div>
+    <div class="rd-field"><label>Notas / reseña</label><textarea id="rdFNotes" rows="3" placeholder="Qué te pareció..."></textarea></div>
+    <div class="rd-modal-actions">
+      <button class="rd-btn-secondary" id="rdBookCancel" type="button">Cancelar</button>
+      <button class="rd-btn-primary" id="rdBookSave" type="button">Guardar</button>
+    </div>
+    <div class="rd-modal-actions" style="margin-top:10px;">
+      <button class="rd-btn-secondary rd-btn-danger" id="rdBookDelete" type="button" style="width:100%;">Borrar libro</button>
+    </div>
+  </div>
+</div>
+
+<!-- Goal modal -->
+<div class="rd-modal-bg" id="rdGoalModalBg">
+  <div class="rd-modal">
+    <h3>Meta anual</h3>
+    <div class="rd-field"><label>Libros a leer este año</label><input type="number" id="rdGoalInput" min="1" step="1"></div>
+    <div class="rd-modal-actions">
+      <button class="rd-btn-secondary" id="rdGoalCancel" type="button">Cancelar</button>
+      <button class="rd-btn-primary" id="rdGoalSave" type="button">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Wishlist add modal -->
+<div class="rd-modal-bg" id="rdWishModalBg">
+  <div class="rd-modal">
+    <h3>Agregar a wishlist</h3>
+    <div class="rd-field"><label>Título</label><input type="text" id="rdWTitle" placeholder="Título recomendado"></div>
+    <div class="rd-field"><label>Autor</label><input type="text" id="rdWAuthor" placeholder="Autor (opcional)"></div>
+    <div class="rd-field"><label>De dónde salió</label><input type="text" id="rdWSource" placeholder="Recomendado por Juan / visto en Goodreads..."></div>
+    <div class="rd-modal-actions">
+      <button class="rd-btn-secondary" id="rdWishCancel" type="button">Cancelar</button>
+      <button class="rd-btn-primary" id="rdWishSave" type="button">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var READING_KEY = 'reading_v1';
+  var STATUS_LABELS = { to_read: 'Por leer', reading: 'Leyendo', finished: 'Terminado', abandoned: 'Abandonado' };
+
+  function $(id) { return document.getElementById(id); }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function todayISO() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function uid(p) { return p + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
+
+  function defaultState() { return { yearlyGoal: 20, books: [], wishlist: [] }; }
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(READING_KEY);
+      if (!raw) return defaultState();
+      var p = JSON.parse(raw);
+      return {
+        yearlyGoal: p.yearlyGoal || 20,
+        books: Array.isArray(p.books) ? p.books : [],
+        wishlist: Array.isArray(p.wishlist) ? p.wishlist : []
+      };
+    } catch (e) { return defaultState(); }
+  }
+  function saveState() { try { localStorage.setItem(READING_KEY, JSON.stringify(state)); } catch (e) {} }
+
+  var state = loadState();
+  var activeTab = 'reading';
+  var finishedSort = 'date';
+
+  // -------- Derived --------
+  function finishedThisYear(year) {
+    return state.books.filter(function (b) { return b.status === 'finished' && b.finishedDate && b.finishedDate.slice(0, 4) === String(year); });
+  }
+  function yearBreakdown() {
+    var map = {};
+    state.books.forEach(function (b) {
+      if (b.status === 'finished' && b.finishedDate) {
+        var y = b.finishedDate.slice(0, 4);
+        map[y] = (map[y] || 0) + 1;
+      }
+    });
+    return Object.keys(map).sort().reverse().map(function (y) { return { year: y, count: map[y] }; });
+  }
+  function computePace() {
+    var books = state.books.filter(function (b) { return b.status === 'reading' && b.startDate && b.currentPage > 0; });
+    if (!books.length) return null;
+    var total = 0;
+    books.forEach(function (b) {
+      var days = Math.max(1, Math.round((new Date() - new Date(b.startDate)) / 86400000));
+      total += (b.currentPage / days) * 7;
+    });
+    return Math.round(total);
+  }
+
+  // -------- Render: goal --------
+  function renderGoal() {
+    var year = new Date().getFullYear();
+    var count = finishedThisYear(year).length;
+    $('rdGoalCount').textContent = count;
+    $('rdGoalOf').textContent = '/ ' + state.yearlyGoal + ' libros este año';
+    var pct = state.yearlyGoal > 0 ? Math.min(100, (count / state.yearlyGoal) * 100) : 0;
+    $('rdGoalFill').style.width = pct + '%';
+    var pace = computePace();
+    $('rdPace').textContent = pace != null ? '≈ ' + pace + ' páginas/semana (estimado, según lo que estás leyendo ahora)' : '';
+    var years = yearBreakdown();
+    $('rdYearBreakdown').innerHTML = years.map(function (y) {
+      return '<span class="rd-year-chip">' + y.year + ': ' + y.count + ' libro' + (y.count === 1 ? '' : 's') + '</span>';
+    }).join('');
+  }
+
+  // -------- Render: book list per tab --------
+  function starsHtml(rating) {
+    var r = rating || 0;
+    var out = '';
+    for (var i = 1; i <= 5; i++) out += (i <= r ? '★' : '☆');
+    return out;
+  }
+  function matchesSearch(b, q) {
+    if (!q) return true;
+    q = q.toLowerCase();
+    return (b.title || '').toLowerCase().indexOf(q) !== -1 || (b.author || '').toLowerCase().indexOf(q) !== -1;
+  }
+  function renderBookList() {
+    var q = $('rdSearch').value.trim();
+    $('rdSearch').classList.toggle('hidden', state.books.length <= 6);
+    var list = state.books.filter(function (b) { return b.status === activeTab && matchesSearch(b, q); });
+    $('rdSortRow').classList.toggle('hidden', activeTab !== 'finished');
+    if (activeTab === 'finished') {
+      list = list.slice().sort(function (a, b) {
+        if (finishedSort === 'rating') return (b.rating || 0) - (a.rating || 0);
+        return (b.finishedDate || '').localeCompare(a.finishedDate || '');
+      });
+    }
+    var wrap = $('rdBookList');
+    if (!list.length) {
+      wrap.innerHTML = '<div class="rd-empty">' + (state.books.length ? 'Nada acá todavía.' : 'Sin libros todavía — agrega el primero con el botón +.') + '</div>';
+      return;
+    }
+    wrap.innerHTML = list.map(function (b) {
+      var coverStyle = b.coverUrl ? ' style="background-image:url(\'' + escapeHtml(b.coverUrl) + '\');"' : '';
+      var coverInner = b.coverUrl ? '' : '📖';
+      var tags = '<span class="rd-book-tag">' + STATUS_LABELS[b.status] + '</span>' + (b.genre ? '<span class="rd-book-tag">' + escapeHtml(b.genre) + '</span>' : '');
+      var body = '';
+      if (b.status === 'reading') {
+        var total = b.totalPages || 0;
+        var cur = Math.min(b.currentPage || 0, total || (b.currentPage || 0));
+        var pct = total > 0 ? Math.min(100, (cur / total) * 100) : 0;
+        body =
+          '<div class="rd-progress-mini-track"><div class="rd-progress-mini-fill" style="width:' + pct + '%;"></div></div>' +
+          '<div class="rd-progress-label">' + cur + (total ? ' / ' + total : '') + ' páginas' + (total ? ' · ' + Math.round(pct) + '%' : '') + '</div>' +
+          '<div class="rd-stepper">' +
+            '<button class="rd-step-btn" data-step="-10" data-id="' + b.id + '">-10</button>' +
+            '<button class="rd-step-btn" data-step="-1" data-id="' + b.id + '">-1</button>' +
+            '<button class="rd-step-btn" data-step="1" data-id="' + b.id + '">+1</button>' +
+            '<button class="rd-step-btn" data-step="10" data-id="' + b.id + '">+10</button>' +
+          '</div>' +
+          '<div class="rd-book-actions">' +
+            '<button data-act="finish" data-id="' + b.id + '">Marcar terminado</button>' +
+            '<button data-act="edit" data-id="' + b.id + '">Editar</button>' +
+          '</div>';
+      } else if (b.status === 'finished') {
+        body = '<div class="rd-stars">' + starsHtml(b.rating) + '</div>' +
+          '<div class="rd-progress-label">' + (b.finishedDate || '—') + '</div>' +
+          '<div class="rd-book-actions"><button data-act="edit" data-id="' + b.id + '">Editar</button></div>';
+      } else if (b.status === 'to_read') {
+        body = '<div class="rd-book-actions">' +
+          '<button data-act="start" data-id="' + b.id + '">Empezar</button>' +
+          '<button data-act="edit" data-id="' + b.id + '">Editar</button>' +
+        '</div>';
+      } else {
+        body = '<div class="rd-book-actions"><button data-act="edit" data-id="' + b.id + '">Editar</button></div>';
+      }
+      return (
+        '<div class="rd-book-card">' +
+          '<div class="rd-cover"' + coverStyle + '>' + coverInner + '</div>' +
+          '<div class="rd-book-main">' +
+            '<div class="rd-book-title">' + escapeHtml(b.title) + '</div>' +
+            '<div class="rd-book-author">' + escapeHtml(b.author || 'Autor desconocido') + '</div>' +
+            '<div class="rd-book-tags">' + tags + '</div>' +
+            body +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+
+    wrap.querySelectorAll('.rd-step-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () { stepPage(btn.dataset.id, parseInt(btn.dataset.step, 10)); });
+    });
+    wrap.querySelectorAll('button[data-act]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.dataset.id, act = btn.dataset.act;
+        if (act === 'edit') openBookModal(id);
+        else if (act === 'start') { startBook(id); }
+        else if (act === 'finish') { finishBook(id); }
+      });
+    });
+  }
+  function stepPage(id, delta) {
+    var b = state.books.find(function (x) { return x.id === id; });
+    if (!b) return;
+    var next = (b.currentPage || 0) + delta;
+    if (next < 0) next = 0;
+    if (b.totalPages) next = Math.min(next, b.totalPages);
+    b.currentPage = next;
+    saveState();
+    renderBookList();
+  }
+  function startBook(id) {
+    var b = state.books.find(function (x) { return x.id === id; });
+    if (!b) return;
+    b.status = 'reading';
+    if (!b.startDate) b.startDate = todayISO();
+    saveState();
+    renderAll();
+  }
+  function finishBook(id) {
+    var b = state.books.find(function (x) { return x.id === id; });
+    if (!b) return;
+    b.status = 'finished';
+    b.finishedDate = todayISO();
+    if (b.totalPages) b.currentPage = b.totalPages;
+    saveState();
+    renderAll();
+  }
+
+  // -------- Book modal --------
+  var editingBookId = null;
+  function setStars(container, value) {
+    container.querySelectorAll('span').forEach(function (s) {
+      s.classList.toggle('on', parseInt(s.dataset.v, 10) <= value);
+    });
+    container.dataset.value = value;
+  }
+  function openBookModal(id) {
+    editingBookId = id || null;
+    var b = id ? state.books.find(function (x) { return x.id === id; }) : null;
+    $('rdBookModalTitle').textContent = b ? 'Editar libro' : 'Nuevo libro';
+    $('rdBookDelete').classList.toggle('hidden', !b);
+    $('rdFTitle').value = b ? b.title : '';
+    $('rdFAuthor').value = b ? (b.author || '') : '';
+    $('rdFGenre').value = b ? (b.genre || '') : '';
+    $('rdFStatus').value = b ? b.status : 'to_read';
+    $('rdFCurrentPage').value = b ? (b.currentPage || 0) : 0;
+    $('rdFTotalPages').value = b ? (b.totalPages || 0) : 0;
+    $('rdFStartDate').value = b ? (b.startDate || '') : '';
+    $('rdFFinishDate').value = b ? (b.finishedDate || '') : '';
+    $('rdFCover').value = b ? (b.coverUrl || '') : '';
+    $('rdFNotes').value = b ? (b.notes || '') : '';
+    setStars($('rdFStars'), b ? (b.rating || 0) : 0);
+    $('rdBookModalBg').classList.add('show');
+  }
+  function saveBookForm() {
+    var title = $('rdFTitle').value.trim();
+    if (!title) { alert('El título es obligatorio.'); return; }
+    var data = {
+      title: title,
+      author: $('rdFAuthor').value.trim(),
+      genre: $('rdFGenre').value.trim(),
+      status: $('rdFStatus').value,
+      currentPage: parseInt($('rdFCurrentPage').value, 10) || 0,
+      totalPages: parseInt($('rdFTotalPages').value, 10) || 0,
+      startDate: $('rdFStartDate').value || '',
+      finishedDate: $('rdFFinishDate').value || '',
+      coverUrl: $('rdFCover').value.trim(),
+      notes: $('rdFNotes').value.trim(),
+      rating: parseInt($('rdFStars').dataset.value || '0', 10)
+    };
+    if (editingBookId) {
+      var b = state.books.find(function (x) { return x.id === editingBookId; });
+      if (b) Object.assign(b, data);
+    } else {
+      data.id = uid('book');
+      state.books.unshift(data);
+    }
+    saveState();
+    $('rdBookModalBg').classList.remove('show');
+    activeTab = data.status;
+    renderAll();
+  }
+  function deleteBook() {
+    if (!editingBookId) return;
+    if (!confirm('¿Borrar este libro?')) return;
+    state.books = state.books.filter(function (x) { return x.id !== editingBookId; });
+    saveState();
+    $('rdBookModalBg').classList.remove('show');
+    renderAll();
+  }
+
+  // -------- Goal modal --------
+  function saveGoal() {
+    var v = parseInt($('rdGoalInput').value, 10);
+    if (!v || v < 1) { alert('Poné un número válido.'); return; }
+    state.yearlyGoal = v;
+    saveState();
+    $('rdGoalModalBg').classList.remove('show');
+    renderGoal();
+  }
+
+  // -------- Wishlist --------
+  function renderWishlist() {
+    var wrap = $('rdWishlist');
+    if (!state.wishlist.length) { wrap.innerHTML = '<div class="rd-empty">Nada en la wishlist todavía.</div>'; return; }
+    wrap.innerHTML = state.wishlist.map(function (w) {
+      return (
+        '<div class="rd-wish-row" data-id="' + w.id + '">' +
+          '<div class="rd-wish-main"><div class="rd-wish-title">' + escapeHtml(w.title) + (w.author ? ' — ' + escapeHtml(w.author) : '') + '</div>' +
+          '<div class="rd-wish-meta">' + escapeHtml(w.source || '') + '</div></div>' +
+          '<div class="rd-wish-actions">' +
+            '<button data-act="promote" data-id="' + w.id + '">Empezar</button>' +
+            '<button data-act="del" data-id="' + w.id + '">✕</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+    wrap.querySelectorAll('button[data-act]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.dataset.id;
+        if (btn.dataset.act === 'promote') promoteWishlistItem(id);
+        else deleteWishlistItem(id);
+      });
+    });
+  }
+  function promoteWishlistItem(id) {
+    var w = state.wishlist.find(function (x) { return x.id === id; });
+    if (!w) return;
+    state.books.unshift({
+      id: uid('book'), title: w.title, author: w.author || '', genre: '', status: 'to_read',
+      currentPage: 0, totalPages: 0, startDate: '', finishedDate: '', coverUrl: '', notes: '', rating: 0
+    });
+    state.wishlist = state.wishlist.filter(function (x) { return x.id !== id; });
+    saveState();
+    activeTab = 'to_read';
+    renderAll();
+  }
+  function deleteWishlistItem(id) {
+    state.wishlist = state.wishlist.filter(function (x) { return x.id !== id; });
+    saveState();
+    renderWishlist();
+  }
+  function saveWishForm() {
+    var title = $('rdWTitle').value.trim();
+    if (!title) { alert('El título es obligatorio.'); return; }
+    state.wishlist.unshift({ id: uid('wish'), title: title, author: $('rdWAuthor').value.trim(), source: $('rdWSource').value.trim() });
+    saveState();
+    $('rdWishModalBg').classList.remove('show');
+    $('rdWTitle').value = ''; $('rdWAuthor').value = ''; $('rdWSource').value = '';
+    renderWishlist();
+  }
+
+  // -------- Tabs --------
+  function setActiveTab(tab) {
+    activeTab = tab;
+    $('rdTabs').querySelectorAll('.rd-tab-btn').forEach(function (b) { b.classList.toggle('active', b.dataset.tab === tab); });
+    renderBookList();
+  }
+
+  // -------- Boot --------
+  function renderAll() {
+    renderGoal();
+    setActiveTab(activeTab);
+    renderWishlist();
+  }
+  function boot() {
+    $('rdTabs').querySelectorAll('.rd-tab-btn').forEach(function (b) {
+      b.addEventListener('click', function () { setActiveTab(b.dataset.tab); });
+    });
+    $('rdSortRow').querySelectorAll('.rd-sort-btn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        finishedSort = b.dataset.sort;
+        $('rdSortRow').querySelectorAll('.rd-sort-btn').forEach(function (x) { x.classList.toggle('active', x === b); });
+        renderBookList();
+      });
+    });
+    $('rdSearch').addEventListener('input', renderBookList);
+
+    $('rdAddBookBtn').addEventListener('click', function () { openBookModal(null); });
+    $('rdBookCancel').addEventListener('click', function () { $('rdBookModalBg').classList.remove('show'); });
+    $('rdBookSave').addEventListener('click', saveBookForm);
+    $('rdBookDelete').addEventListener('click', deleteBook);
+    $('rdFStars').querySelectorAll('span').forEach(function (s) {
+      s.addEventListener('click', function () { setStars($('rdFStars'), parseInt(s.dataset.v, 10)); });
+    });
+
+    $('rdEditGoalBtn').addEventListener('click', function () { $('rdGoalInput').value = state.yearlyGoal; $('rdGoalModalBg').classList.add('show'); });
+    $('rdGoalCancel').addEventListener('click', function () { $('rdGoalModalBg').classList.remove('show'); });
+    $('rdGoalSave').addEventListener('click', saveGoal);
+
+    $('rdAddWishBtn').addEventListener('click', function () { $('rdWishModalBg').classList.add('show'); });
+    $('rdWishCancel').addEventListener('click', function () { $('rdWishModalBg').classList.remove('show'); });
+    $('rdWishSave').addEventListener('click', saveWishForm);
+
+    renderAll();
+    window.addEventListener('storage', function () { state = loadState(); renderAll(); });
+  }
+
+  window.rdRenderAll = function () { state = loadState(); renderAll(); };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof initCloudSync !== 'function') return;
+  initCloudSync({
+    appKey: 'reading',
+    syncedKeys: ['reading_v1'],
+    onApplied: function () {
+      if (typeof window.rdRenderAll === 'function') window.rdRenderAll();
+    }
+  });
+});
+</script>
+
+</body>
+</html>
