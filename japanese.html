@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050506">
+<title>Japonés — ACJ DASHB</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="sync.js" defer></script>
+<script src="topbar.js" defer></script>
+<style>
+:root {
+  --bg: #050506;
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-input: rgba(0, 0, 0, 0.28);
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text-primary: #FAFAFA;
+  --text-secondary: #B8B6B0;
+  --text-tertiary: #76746E;
+  --accent: #1D9E75;
+  --accent-glow: rgba(29, 158, 117, 0.35);
+  --warning: #FF8A4D;
+  --bad: #FF6B6B;
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body { min-height: 100vh; position: relative; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background:
+    radial-gradient(60% 50% at 82% 14%, rgba(224, 118, 88, 0.16) 0%, transparent 60%),
+    radial-gradient(50% 40% at 18% 90%, rgba(180, 180, 200, 0.06) 0%, transparent 60%);
+  filter: blur(40px);
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: ''; position: fixed; inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,0.014) 1px, transparent 1px);
+  background-size: 3px 3px;
+  pointer-events: none; z-index: 1;
+}
+main {
+  position: relative; z-index: 2;
+  max-width: 720px; margin: 0 auto;
+  padding: 56px 20px 100px;
+  padding-top: max(56px, env(safe-area-inset-top, 56px));
+}
+
+/* ----- Sub-nav (shared visual w/ learn.html) ----- */
+.lrn-subnav {
+  display: flex; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 4px; gap: 3px; margin-bottom: 18px;
+}
+.lrn-seg-btn {
+  flex: 1; padding: 10px 8px; border: none; background: transparent;
+  color: var(--text-tertiary); border-radius: 8px;
+  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none; display: flex; align-items: center; justify-content: center;
+}
+.lrn-seg-btn.active {
+  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
+  color: #0a0a0b;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 12px rgba(0,0,0,0.35);
+}
+.lrn-seg-btn.disabled { opacity: 0.4; cursor: default; }
+
+.jp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.jp-title {
+  margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 120%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+}
+.jp-icon-btn {
+  width: 38px; height: 38px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text-secondary); cursor: pointer; font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+}
+.jp-icon-btn:hover { background: rgba(255,255,255,0.08); }
+
+.stack-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+}
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 0 0 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-title::before { content: '≡'; font-size: 14px; opacity: 0.5; }
+
+/* ----- CTA ----- */
+.jp-cta-count { font-size: 32px; font-weight: 800; color: var(--text-primary); font-family: var(--font-mono); }
+.jp-cta-label { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; margin-bottom: 14px; }
+.jp-btn-row { display: flex; gap: 8px; }
+.jp-btn-row button { flex: 1; }
+.jp-empty-banner {
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  font-size: 12.5px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5;
+}
+
+/* ----- Buttons ----- */
+.jp-btn-primary {
+  padding: 13px; border: none; border-radius: 12px;
+  background: linear-gradient(180deg, var(--accent) 0%, #17805f 100%);
+  color: #fff; font-family: inherit; font-size: 13.5px; font-weight: 700;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+.jp-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.jp-btn-secondary {
+  padding: 13px; border: 1px solid var(--border-strong); border-radius: 12px;
+  background: rgba(255,255,255,0.04); color: var(--text-primary);
+  font-family: inherit; font-size: 13.5px; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.jp-btn-secondary:hover { background: rgba(255,255,255,0.08); }
+.jp-btn-danger { color: var(--bad); }
+
+/* ----- Streak / totals ----- */
+.jp-streak-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.jp-streak-box { text-align: center; padding: 14px 6px; border-radius: 12px; background: var(--bg-input); border: 1px solid var(--border); }
+.jp-streak-num { font-size: 22px; font-weight: 800; font-family: var(--font-mono); color: var(--text-primary); }
+.jp-streak-label { font-size: 9.5px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 6px; line-height: 1.4; }
+.jp-totals-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.jp-totals-table td { padding: 7px 4px; font-family: var(--font-mono); color: var(--text-primary); border-top: 1px solid var(--border); }
+.jp-totals-table td:first-child { color: var(--text-tertiary); font-family: var(--font); font-size: 12px; }
+.jp-totals-table td:last-child { text-align: right; font-weight: 700; }
+
+/* ----- Heatmap ----- */
+.jp-heatmap { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.jp-heatmap-header { margin-bottom: 4px; }
+.jp-heat-dow { font-size: 9px; color: var(--text-tertiary); text-align: center; }
+.jp-heat-cell { aspect-ratio: 1; border-radius: 4px; }
+.jp-heat-today { box-shadow: inset 0 0 0 1.5px #ffffff; }
+
+/* ----- Decks ----- */
+.jp-deck-card { padding: 14px; border-radius: 12px; background: var(--bg-input); border: 1px solid var(--border); margin-bottom: 10px; }
+.jp-deck-card:last-child { margin-bottom: 0; }
+.jp-deck-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; gap: 8px; }
+.jp-deck-name { font-weight: 700; font-size: 14.5px; color: var(--text-primary); }
+.jp-deck-meta { font-size: 11.5px; color: var(--text-tertiary); font-family: var(--font-mono); flex-shrink: 0; }
+.jp-deck-progress-track { height: 6px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow: hidden; margin: 8px 0 10px; }
+.jp-deck-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #34d399); border-radius: 999px; }
+.jp-deck-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.jp-deck-actions button {
+  flex: 1 1 auto; padding: 8px 10px; border-radius: 9px; border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03); color: var(--text-secondary);
+  font-family: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.jp-deck-actions button:hover { background: rgba(255,255,255,0.08); }
+
+/* ----- Flashcard practice ----- */
+.jp-quit-btn {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--text-tertiary); font-size: 12px; font-weight: 600;
+  background: none; border: none; cursor: pointer; padding: 8px 0; margin-bottom: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+.jp-counter { text-align: center; font-family: var(--font-mono); font-size: 12.5px; color: var(--text-tertiary); margin-bottom: 14px; }
+.jp-flashcard {
+  min-height: 240px; border-radius: 20px;
+  background: var(--bg-card); border: 1px solid var(--border-strong);
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: 24px; cursor: pointer; margin-bottom: 18px;
+}
+.jp-flashcard-face { display: none; flex-direction: column; align-items: center; }
+.jp-flashcard .jp-front { display: flex; }
+.jp-flashcard.flipped .jp-front { display: none; }
+.jp-flashcard.flipped .jp-back { display: flex; }
+.jp-front-char { font-size: 68px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+.jp-back-text { font-size: 30px; font-weight: 800; color: var(--accent); }
+.jp-back-note { font-size: 13px; color: var(--text-tertiary); margin-top: 12px; max-width: 280px; }
+.jp-tap-hint { font-size: 10.5px; color: var(--text-tertiary); margin-top: 18px; text-transform: uppercase; letter-spacing: 0.12em; }
+.jp-grade-row { display: none; gap: 10px; }
+.jp-grade-row.show { display: flex; }
+.jp-grade-row button {
+  flex: 1; padding: 16px; border-radius: 14px; border: none;
+  font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.jp-grade-wrong { background: rgba(255,107,107,0.14); color: var(--bad); border: 1px solid rgba(255,107,107,0.30) !important; }
+.jp-grade-right { background: linear-gradient(180deg, var(--accent) 0%, #17805f 100%); color: #fff; }
+
+.jp-summary { text-align: center; padding: 30px 10px; }
+.jp-summary-emoji { font-size: 46px; margin-bottom: 12px; }
+.jp-summary-title { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+.jp-summary-detail { font-size: 13.5px; color: var(--text-secondary); margin-bottom: 22px; }
+
+/* ----- Fields (modals) ----- */
+.jp-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.jp-field:last-child { margin-bottom: 0; }
+.jp-field > label { font-size: 10px; color: var(--text-tertiary); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.jp-field input[type="text"], .jp-field select {
+  padding: 12px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-primary);
+  border-radius: 12px; font-family: inherit; font-size: 14px;
+}
+.jp-field input:focus, .jp-field select:focus { outline: none; border-color: rgba(255,255,255,0.35); }
+
+/* ----- Modals ----- */
+.jp-modal-bg {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.jp-modal-bg.show { display: flex; }
+.jp-modal {
+  width: 100%; max-width: 440px; max-height: 86vh; overflow-y: auto;
+  background: #101012; border: 1px solid var(--border-strong);
+  border-radius: 16px; padding: 20px;
+}
+.jp-modal h3 { margin: 0 0 14px; font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.jp-modal-actions { display: flex; gap: 8px; margin-top: 8px; }
+.jp-modal-actions button { flex: 1; }
+.jp-card-row {
+  display: flex; align-items: center; gap: 8px; padding: 8px 4px;
+  border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.jp-card-row:last-child { border-bottom: none; }
+.jp-card-row-main { flex: 1; min-width: 0; font-size: 12.5px; }
+.jp-card-row-front { color: var(--text-primary); font-weight: 700; }
+.jp-card-row-back { color: var(--text-tertiary); }
+.jp-card-row-level {
+  font-size: 9px; font-family: var(--font-mono); color: var(--text-tertiary);
+  border: 1px solid var(--border); border-radius: 999px; padding: 2px 6px; flex-shrink: 0;
+}
+.jp-card-row-del {
+  width: 26px; height: 26px; flex-shrink: 0; border-radius: 7px; border: 1px solid var(--border);
+  background: rgba(255,107,107,0.08); color: var(--bad); cursor: pointer; font-size: 13px;
+}
+.hidden { display: none !important; }
+
+@media (max-width: 480px) {
+  main { padding-top: max(40px, env(safe-area-inset-top, 40px)); }
+  .jp-front-char { font-size: 56px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="lrn-subnav">
+    <a href="japanese.html" class="lrn-seg-btn active">Japonés</a>
+    <span class="lrn-seg-btn disabled" title="Próximamente">Lectura</span>
+    <span class="lrn-seg-btn disabled" title="Próximamente">Música</span>
+  </div>
+
+  <div class="jp-header">
+    <h1 class="jp-title">日本語</h1>
+    <button class="jp-icon-btn" id="jpNewDeckBtn" type="button" aria-label="Nuevo mazo">+</button>
+  </div>
+
+  <div id="jpMainView">
+    <div class="stack-card">
+      <div id="jpEmptyBanner" class="jp-empty-banner hidden"></div>
+      <div class="jp-cta-count" id="jpDueCount">0</div>
+      <div class="jp-cta-label" id="jpDueLabel">cartas para repasar hoy</div>
+      <div class="jp-btn-row">
+        <button class="jp-btn-primary" id="jpReviewBtn" type="button">Repasar hoy</button>
+        <button class="jp-btn-secondary" id="jpCramBtn" type="button">Modo cram</button>
+      </div>
+    </div>
+
+    <div class="stack-card">
+      <div class="section-title">Progreso</div>
+      <div class="jp-streak-grid">
+        <div class="jp-streak-box"><div class="jp-streak-num" id="jpStreakCur">🔥 0</div><div class="jp-streak-label">Días seguidos<br>récord <span id="jpStreakRec">0</span></div></div>
+        <div class="jp-streak-box"><div class="jp-streak-num" id="jpMasteredNum">0</div><div class="jp-streak-label">Cartas dominadas<br>de <span id="jpTotalCardsNum">0</span> totales</div></div>
+      </div>
+      <table class="jp-totals-table">
+        <tr><td>Mazos</td><td id="jpTotalDecks">0</td></tr>
+        <tr><td>Cartas totales</td><td id="jpTotalCards2">0</td></tr>
+        <tr><td>Repasos totales</td><td id="jpTotalReviews">0</td></tr>
+      </table>
+    </div>
+
+    <div class="stack-card">
+      <div class="section-title">Este mes</div>
+      <div id="jpHeatmap"></div>
+    </div>
+
+    <div class="stack-card">
+      <div class="section-title">Mazos</div>
+      <div id="jpDeckList"></div>
+    </div>
+  </div>
+
+  <div id="jpPracticeView" class="hidden">
+    <div id="jpPracticeCardWrap">
+      <button class="jp-quit-btn" id="jpQuitBtn" type="button">← Salir del repaso</button>
+      <div class="jp-counter" id="jpCounter"></div>
+      <div class="jp-flashcard" id="jpCard">
+        <div class="jp-flashcard-face jp-front">
+          <div class="jp-front-char" id="jpCardFront"></div>
+          <div class="jp-tap-hint">Toca para voltear</div>
+        </div>
+        <div class="jp-flashcard-face jp-back">
+          <div class="jp-back-text" id="jpCardBack"></div>
+          <div class="jp-back-note" id="jpCardNote"></div>
+        </div>
+      </div>
+      <div class="jp-grade-row" id="jpGradeRow">
+        <button class="jp-grade-wrong" id="jpWrongBtn" type="button">No sé</button>
+        <button class="jp-grade-right" id="jpRightBtn" type="button">Sé</button>
+      </div>
+    </div>
+    <div id="jpPracticeSummary" class="jp-summary hidden">
+      <div class="jp-summary-emoji" id="jpSummaryEmoji">🎉</div>
+      <div class="jp-summary-title" id="jpSummaryTitle"></div>
+      <div class="jp-summary-detail" id="jpSummaryDetail"></div>
+      <button class="jp-btn-primary" id="jpSummaryBack" type="button" style="width:100%;">Volver</button>
+    </div>
+  </div>
+</main>
+
+<!-- Cram: choose deck -->
+<div class="jp-modal-bg" id="jpCramModalBg">
+  <div class="jp-modal">
+    <h3>Modo cram — elegí un mazo</h3>
+    <div id="jpCramDeckList"></div>
+    <div class="jp-modal-actions">
+      <button class="jp-btn-secondary" id="jpCramCancel" type="button">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- New / rename deck -->
+<div class="jp-modal-bg" id="jpDeckModalBg">
+  <div class="jp-modal">
+    <h3 id="jpDeckModalTitle">Nuevo mazo</h3>
+    <div class="jp-field"><label>Nombre</label><input type="text" id="jpDeckName" placeholder="Vocabulario N5"></div>
+    <div class="jp-modal-actions">
+      <button class="jp-btn-secondary" id="jpDeckCancel" type="button">Cancelar</button>
+      <button class="jp-btn-primary" id="jpDeckSave" type="button">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage cards within a deck -->
+<div class="jp-modal-bg" id="jpCardsModalBg">
+  <div class="jp-modal">
+    <h3 id="jpCardsModalTitle">Cartas</h3>
+    <div id="jpCardsList" style="margin-bottom:14px;"></div>
+    <div class="jp-field"><label>Frente (japonés)</label><input type="text" id="jpCardFrontInput" placeholder="食べる"></div>
+    <div class="jp-field"><label>Reverso (significado / lectura)</label><input type="text" id="jpCardBackInput" placeholder="taberu — comer"></div>
+    <div class="jp-field"><label>Nota (opcional)</label><input type="text" id="jpCardNoteInput" placeholder="Ejemplo de uso..."></div>
+    <div class="jp-modal-actions">
+      <button class="jp-btn-secondary" id="jpCardFormCancel" type="button">Cancelar edición</button>
+      <button class="jp-btn-primary" id="jpCardFormSave" type="button">Agregar carta</button>
+    </div>
+    <div class="jp-modal-actions" style="margin-top:14px;">
+      <button class="jp-btn-secondary jp-btn-danger" id="jpDeckDelete" type="button">Borrar este mazo</button>
+      <button class="jp-btn-primary" id="jpCardsModalClose" type="button">Listo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var JP_KEY = 'jp_v1';
+  var LEVEL_INTERVALS = [1, 3, 7, 14, 30, 90];
+  var MASTERED_LEVEL = 4;
+
+  var GOJUON_HIRAGANA = [
+    ['あ','a'],['い','i'],['う','u'],['え','e'],['お','o'],
+    ['か','ka'],['き','ki'],['く','ku'],['け','ke'],['こ','ko'],
+    ['さ','sa'],['し','shi'],['す','su'],['せ','se'],['そ','so'],
+    ['た','ta'],['ち','chi'],['つ','tsu'],['て','te'],['と','to'],
+    ['な','na'],['に','ni'],['ぬ','nu'],['ね','ne'],['の','no'],
+    ['は','ha'],['ひ','hi'],['ふ','fu'],['へ','he'],['ほ','ho'],
+    ['ま','ma'],['み','mi'],['む','mu'],['め','me'],['も','mo'],
+    ['や','ya'],['ゆ','yu'],['よ','yo'],
+    ['ら','ra'],['り','ri'],['る','ru'],['れ','re'],['ろ','ro'],
+    ['わ','wa'],['を','wo'],
+    ['ん','n']
+  ];
+  var GOJUON_KATAKANA = [
+    ['ア','a'],['イ','i'],['ウ','u'],['エ','e'],['オ','o'],
+    ['カ','ka'],['キ','ki'],['ク','ku'],['ケ','ke'],['コ','ko'],
+    ['サ','sa'],['シ','shi'],['ス','su'],['セ','se'],['ソ','so'],
+    ['タ','ta'],['チ','chi'],['ツ','tsu'],['テ','te'],['ト','to'],
+    ['ナ','na'],['ニ','ni'],['ヌ','nu'],['ネ','ne'],['ノ','no'],
+    ['ハ','ha'],['ヒ','hi'],['フ','fu'],['ヘ','he'],['ホ','ho'],
+    ['マ','ma'],['ミ','mi'],['ム','mu'],['メ','me'],['モ','mo'],
+    ['ヤ','ya'],['ユ','yu'],['ヨ','yo'],
+    ['ラ','ra'],['リ','ri'],['ル','ru'],['レ','re'],['ロ','ro'],
+    ['ワ','wa'],['ヲ','wo'],
+    ['ン','n']
+  ];
+
+  function $(id) { return document.getElementById(id); }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function todayISO() { return isoOf(new Date()); }
+  function isoOf(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function parseISO(s) { var p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function addDaysToToday(n) { var d = new Date(); d.setDate(d.getDate() + n); return isoOf(d); }
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function uid(prefix) { return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
+
+  // -------- Storage / seeding --------
+  function buildSeedDeck(id, name, pairs) {
+    return {
+      id: id, name: name,
+      cards: pairs.map(function (p, i) {
+        return { id: id + '_' + i, front: p[0], back: p[1], note: '', level: 0, nextReviewDate: todayISO(), timesCorrect: 0, timesWrong: 0, lastReviewedDate: null };
+      })
+    };
+  }
+  function seedState() {
+    return {
+      decks: [
+        buildSeedDeck('hiragana', 'Hiragana', GOJUON_HIRAGANA),
+        buildSeedDeck('katakana', 'Katakana', GOJUON_KATAKANA)
+      ],
+      studyLog: {}
+    };
+  }
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(JP_KEY);
+      if (!raw) return seedState();
+      var parsed = JSON.parse(raw);
+      return {
+        decks: Array.isArray(parsed.decks) ? parsed.decks : [],
+        studyLog: (parsed.studyLog && typeof parsed.studyLog === 'object') ? parsed.studyLog : {}
+      };
+    } catch (e) { return seedState(); }
+  }
+  function saveState() { try { localStorage.setItem(JP_KEY, JSON.stringify(state)); } catch (e) {} }
+
+  var state = loadState();
+
+  // -------- Derived helpers --------
+  function allCards() {
+    var out = [];
+    state.decks.forEach(function (d) { d.cards.forEach(function (c) { out.push(c); }); });
+    return out;
+  }
+  function isDue(c) { return c.nextReviewDate <= todayISO(); }
+  function dueCards(deckId) {
+    var pool = deckId ? ((state.decks.find(function (d) { return d.id === deckId; })) || { cards: [] }).cards : allCards();
+    return pool.filter(isDue);
+  }
+  function bumpStudyLog(correct) {
+    var k = todayISO();
+    if (!state.studyLog[k]) state.studyLog[k] = { reviewed: 0, correct: 0 };
+    state.studyLog[k].reviewed++;
+    if (correct) state.studyLog[k].correct++;
+  }
+  function gradeCardSRS(card, correct) {
+    if (correct) { card.level = Math.min(5, card.level + 1); card.timesCorrect++; }
+    else { card.level = Math.max(0, card.level - 1); card.timesWrong++; }
+    var days = correct ? LEVEL_INTERVALS[card.level] : 1;
+    card.nextReviewDate = addDaysToToday(days);
+    card.lastReviewedDate = todayISO();
+  }
+  function studiedDatesSet() {
+    var out = new Set();
+    Object.keys(state.studyLog).forEach(function (k) { if (state.studyLog[k].reviewed > 0) out.add(k); });
+    return out;
+  }
+  function computeDayStreak() {
+    var dates = studiedDatesSet();
+    var cursor = new Date();
+    var streak = 0;
+    if (dates.has(isoOf(cursor))) { streak = 1; cursor.setDate(cursor.getDate() - 1); }
+    else { cursor.setDate(cursor.getDate() - 1); }
+    while (dates.has(isoOf(cursor))) { streak++; cursor.setDate(cursor.getDate() - 1); }
+    return streak;
+  }
+  function computeDayStreakRecord() {
+    var dates = Array.from(studiedDatesSet()).sort();
+    if (!dates.length) return 0;
+    var best = 1, run = 1;
+    for (var i = 1; i < dates.length; i++) {
+      var diff = Math.round((parseISO(dates[i]) - parseISO(dates[i - 1])) / 86400000);
+      if (diff === 1) run++; else if (diff !== 0) run = 1;
+      best = Math.max(best, run);
+    }
+    return Math.max(best, computeDayStreak());
+  }
+
+  // -------- Dashboard render --------
+  function renderCta() {
+    var due = dueCards(null);
+    $('jpDueCount').textContent = due.length;
+    $('jpDueLabel').textContent = due.length === 1 ? 'carta para repasar hoy' : 'cartas para repasar hoy';
+    var banner = $('jpEmptyBanner');
+    if (!due.length) {
+      banner.classList.remove('hidden');
+      banner.textContent = allCards().length
+        ? 'No tienes repasos pendientes hoy — vuelve mañana. ¿Querés repasar de más? Probá el Modo cram.'
+        : 'Todavía no tienes cartas. Crea un mazo y agrega algunas, o usa Hiragana/Katakana que ya vienen listos.';
+      $('jpReviewBtn').disabled = true;
+    } else {
+      banner.classList.add('hidden');
+      $('jpReviewBtn').disabled = false;
+    }
+  }
+  function renderStats() {
+    var cur = computeDayStreak(), rec = computeDayStreakRecord();
+    $('jpStreakCur').textContent = '🔥 ' + cur;
+    $('jpStreakRec').textContent = rec;
+    var all = allCards();
+    var mastered = all.filter(function (c) { return c.level >= MASTERED_LEVEL; }).length;
+    $('jpMasteredNum').textContent = mastered;
+    $('jpTotalCardsNum').textContent = all.length;
+    $('jpTotalDecks').textContent = state.decks.length;
+    $('jpTotalCards2').textContent = all.length;
+    var totalReviews = Object.keys(state.studyLog).reduce(function (s, k) { return s + (state.studyLog[k].reviewed || 0); }, 0);
+    $('jpTotalReviews').textContent = totalReviews;
+  }
+  function renderHeatmap() {
+    var wrap = $('jpHeatmap');
+    var now = new Date();
+    var year = now.getFullYear(), month = now.getMonth();
+    var firstOfMonth = new Date(year, month, 1);
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var monthKey = isoOf(firstOfMonth).slice(0, 7);
+    var maxReviewed = 1;
+    Object.keys(state.studyLog).forEach(function (k) {
+      if (k.slice(0, 7) === monthKey) maxReviewed = Math.max(maxReviewed, state.studyLog[k].reviewed);
+    });
+    var startOffset = (firstOfMonth.getDay() + 6) % 7;
+    var dow = ['L','M','X','J','V','S','D'];
+    var header = dow.map(function (d) { return '<div class="jp-heat-dow">' + d + '</div>'; }).join('');
+    var cells = '';
+    for (var i = 0; i < startOffset; i++) cells += '<div class="jp-heat-cell" style="background:transparent;"></div>';
+    for (var day = 1; day <= daysInMonth; day++) {
+      var key = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+      var reviewed = (state.studyLog[key] || {}).reviewed || 0;
+      var isToday = key === todayISO();
+      var bg = reviewed > 0 ? 'rgba(29,158,117,' + Math.min(1, 0.18 + (reviewed / maxReviewed) * 0.82).toFixed(2) + ')' : 'rgba(255,255,255,0.04)';
+      cells += '<div class="jp-heat-cell' + (isToday ? ' jp-heat-today' : '') + '" style="background:' + bg + '" title="' + key + ': ' + reviewed + ' repasos"></div>';
+    }
+    wrap.innerHTML = '<div class="jp-heatmap jp-heatmap-header">' + header + '</div><div class="jp-heatmap">' + cells + '</div>';
+  }
+  function renderDeckList() {
+    var wrap = $('jpDeckList');
+    if (!state.decks.length) { wrap.innerHTML = '<div style="text-align:center;color:var(--text-tertiary);font-size:13px;padding:10px 0;">Sin mazos todavía.</div>'; return; }
+    wrap.innerHTML = state.decks.map(function (d) {
+      var total = d.cards.length;
+      var mastered = d.cards.filter(function (c) { return c.level >= MASTERED_LEVEL; }).length;
+      var pct = total ? Math.round((mastered / total) * 100) : 0;
+      var due = dueCards(d.id).length;
+      return (
+        '<div class="jp-deck-card" data-id="' + d.id + '">' +
+          '<div class="jp-deck-top"><span class="jp-deck-name">' + escapeHtml(d.name) + '</span><span class="jp-deck-meta">' + total + ' cartas · ' + mastered + ' dominadas</span></div>' +
+          '<div class="jp-deck-progress-track"><div class="jp-deck-progress-fill" style="width:' + pct + '%;"></div></div>' +
+          '<div class="jp-deck-actions">' +
+            '<button data-act="review" data-id="' + d.id + '">Repasar' + (due ? ' (' + due + ')' : '') + '</button>' +
+            '<button data-act="cram" data-id="' + d.id + '">Cram</button>' +
+            '<button data-act="cards" data-id="' + d.id + '">Cartas</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+    wrap.querySelectorAll('button[data-act]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.dataset.id, act = btn.dataset.act;
+        if (act === 'review') startSrsSession(id);
+        else if (act === 'cram') startCramSession(id);
+        else if (act === 'cards') openCardsModal(id);
+      });
+    });
+  }
+  function renderDashboard() {
+    renderCta();
+    renderStats();
+    renderHeatmap();
+    renderDeckList();
+  }
+
+  // -------- Practice session --------
+  var session = null;
+
+  function showPracticeView() {
+    $('jpMainView').classList.add('hidden');
+    $('jpPracticeView').classList.remove('hidden');
+    $('jpPracticeCardWrap').classList.remove('hidden');
+    $('jpPracticeSummary').classList.add('hidden');
+  }
+  function backToMain() {
+    session = null;
+    $('jpPracticeView').classList.add('hidden');
+    $('jpMainView').classList.remove('hidden');
+    renderDashboard();
+  }
+
+  function startSrsSession(deckId) {
+    var cards = dueCards(deckId || null);
+    if (!cards.length) { alert('No hay cartas pendientes ahora mismo.'); return; }
+    session = { mode: 'srs', queue: shuffle(cards), idx: 0, total: cards.length, correct: 0, wrong: 0 };
+    showPracticeView();
+    renderPracticeCard();
+  }
+  function startCramSession(deckId) {
+    var pool = deckId ? ((state.decks.find(function (d) { return d.id === deckId; })) || { cards: [] }).cards : allCards();
+    if (!pool.length) { alert('Este mazo no tiene cartas.'); return; }
+    session = { mode: 'cram', queue: shuffle(pool), idx: 0, totalUnique: pool.length, clearedCorrectCount: 0, wrong: 0 };
+    showPracticeView();
+    renderPracticeCard();
+  }
+  function openCramPicker() {
+    var wrap = $('jpCramDeckList');
+    var opts = [{ id: null, name: 'Todos los mazos' }].concat(state.decks.map(function (d) { return { id: d.id, name: d.name }; }));
+    wrap.innerHTML = opts.map(function (o) {
+      return '<button class="jp-btn-secondary" data-id="' + (o.id || '') + '" style="width:100%;margin-bottom:8px;text-align:left;">' + escapeHtml(o.name) + '</button>';
+    }).join('');
+    wrap.querySelectorAll('button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        $('jpCramModalBg').classList.remove('show');
+        startCramSession(btn.dataset.id || null);
+      });
+    });
+    $('jpCramModalBg').classList.add('show');
+  }
+
+  function renderPracticeCard() {
+    if (!session) return;
+    var done = session.mode === 'srs' ? (session.idx >= session.queue.length) : (session.clearedCorrectCount >= session.totalUnique);
+    if (done) { finishSession(); return; }
+    var card = session.queue[session.idx];
+    $('jpCard').classList.remove('flipped');
+    $('jpGradeRow').classList.remove('show');
+    $('jpCardFront').textContent = card.front;
+    $('jpCardBack').textContent = card.back;
+    $('jpCardNote').textContent = card.note || '';
+    if (session.mode === 'srs') {
+      $('jpCounter').textContent = 'Carta ' + (session.idx + 1) + ' de ' + session.total;
+    } else {
+      $('jpCounter').textContent = 'Dominadas ' + session.clearedCorrectCount + '/' + session.totalUnique + ' · en cola ' + (session.queue.length - session.idx);
+    }
+  }
+  function flipCard() {
+    if (!session) return;
+    var flipped = $('jpCard').classList.toggle('flipped');
+    if (flipped) $('jpGradeRow').classList.add('show');
+  }
+  function gradeCurrent(correct) {
+    if (!session) return;
+    var card = session.queue[session.idx];
+    bumpStudyLog(correct);
+    if (session.mode === 'srs') {
+      gradeCardSRS(card, correct);
+      if (correct) session.correct++; else session.wrong++;
+      session.idx++;
+    } else {
+      if (correct) {
+        session.clearedCorrectCount++;
+        session.idx++;
+      } else {
+        session.wrong++;
+        var requeueAt = Math.min(session.queue.length, session.idx + 3 + Math.floor(Math.random() * 3));
+        session.queue.splice(requeueAt, 0, card);
+        session.idx++;
+      }
+    }
+    saveState();
+    renderPracticeCard();
+  }
+  function finishSession() {
+    var mode = session.mode;
+    var text, detail, emoji;
+    if (mode === 'srs') {
+      emoji = session.wrong === 0 ? '🎉' : '✅';
+      text = '¡Completaste tu repaso de hoy!';
+      detail = session.total + '/' + session.total + ' — ' + session.correct + ' correctas, ' + session.wrong + ' falladas';
+    } else {
+      emoji = '🔥';
+      text = '¡Terminaste el cram!';
+      detail = session.totalUnique + '/' + session.totalUnique + ' cartas dominadas · falladas en el camino: ' + session.wrong;
+    }
+    session = null;
+    $('jpPracticeCardWrap').classList.add('hidden');
+    $('jpPracticeSummary').classList.remove('hidden');
+    $('jpSummaryEmoji').textContent = emoji;
+    $('jpSummaryTitle').textContent = text;
+    $('jpSummaryDetail').textContent = detail;
+  }
+
+  // -------- Deck management --------
+  var editingDeckId = null;
+  function openDeckModal() {
+    editingDeckId = null;
+    $('jpDeckModalTitle').textContent = 'Nuevo mazo';
+    $('jpDeckName').value = '';
+    $('jpDeckModalBg').classList.add('show');
+  }
+  function saveDeck() {
+    var name = $('jpDeckName').value.trim();
+    if (!name) { alert('Ponle un nombre al mazo.'); return; }
+    state.decks.push({ id: uid('deck'), name: name, cards: [] });
+    saveState();
+    $('jpDeckModalBg').classList.remove('show');
+    renderDashboard();
+  }
+
+  var activeCardsDeckId = null;
+  var editingCardId = null;
+  function openCardsModal(deckId) {
+    activeCardsDeckId = deckId;
+    editingCardId = null;
+    var deck = state.decks.find(function (d) { return d.id === deckId; });
+    if (!deck) return;
+    $('jpCardsModalTitle').textContent = deck.name;
+    resetCardForm();
+    renderCardsList();
+    $('jpCardsModalBg').classList.add('show');
+  }
+  function renderCardsList() {
+    var deck = state.decks.find(function (d) { return d.id === activeCardsDeckId; });
+    var wrap = $('jpCardsList');
+    if (!deck || !deck.cards.length) { wrap.innerHTML = '<div style="text-align:center;color:var(--text-tertiary);font-size:12.5px;padding:8px 0;">Sin cartas todavía.</div>'; return; }
+    wrap.innerHTML = deck.cards.map(function (c) {
+      return (
+        '<div class="jp-card-row" data-id="' + c.id + '">' +
+          '<div class="jp-card-row-main"><span class="jp-card-row-front">' + escapeHtml(c.front) + '</span> — <span class="jp-card-row-back">' + escapeHtml(c.back) + '</span></div>' +
+          '<span class="jp-card-row-level">L' + c.level + '</span>' +
+          '<button class="jp-card-row-del" data-del="' + c.id + '" type="button">×</button>' +
+        '</div>'
+      );
+    }).join('');
+    wrap.querySelectorAll('.jp-card-row-main').forEach(function (el) {
+      el.parentElement.addEventListener('click', function (e) {
+        if (e.target.closest('.jp-card-row-del')) return;
+        editCard(el.parentElement.dataset.id);
+      });
+    });
+    wrap.querySelectorAll('.jp-card-row-del').forEach(function (btn) {
+      btn.addEventListener('click', function () { deleteCard(btn.dataset.del); });
+    });
+  }
+  function resetCardForm() {
+    editingCardId = null;
+    $('jpCardFrontInput').value = '';
+    $('jpCardBackInput').value = '';
+    $('jpCardNoteInput').value = '';
+    $('jpCardFormSave').textContent = 'Agregar carta';
+  }
+  function editCard(cardId) {
+    var deck = state.decks.find(function (d) { return d.id === activeCardsDeckId; });
+    var card = deck && deck.cards.find(function (c) { return c.id === cardId; });
+    if (!card) return;
+    editingCardId = cardId;
+    $('jpCardFrontInput').value = card.front;
+    $('jpCardBackInput').value = card.back;
+    $('jpCardNoteInput').value = card.note || '';
+    $('jpCardFormSave').textContent = 'Guardar cambios';
+  }
+  function deleteCard(cardId) {
+    var deck = state.decks.find(function (d) { return d.id === activeCardsDeckId; });
+    if (!deck) return;
+    if (!confirm('¿Borrar esta carta?')) return;
+    deck.cards = deck.cards.filter(function (c) { return c.id !== cardId; });
+    saveState();
+    if (editingCardId === cardId) resetCardForm();
+    renderCardsList();
+  }
+  function saveCardForm() {
+    var deck = state.decks.find(function (d) { return d.id === activeCardsDeckId; });
+    if (!deck) return;
+    var front = $('jpCardFrontInput').value.trim();
+    var back = $('jpCardBackInput').value.trim();
+    var note = $('jpCardNoteInput').value.trim();
+    if (!front || !back) { alert('Frente y reverso son obligatorios.'); return; }
+    if (editingCardId) {
+      var card = deck.cards.find(function (c) { return c.id === editingCardId; });
+      if (card) { card.front = front; card.back = back; card.note = note; }
+    } else {
+      deck.cards.push({ id: uid('card'), front: front, back: back, note: note, level: 0, nextReviewDate: todayISO(), timesCorrect: 0, timesWrong: 0, lastReviewedDate: null });
+    }
+    saveState();
+    resetCardForm();
+    renderCardsList();
+  }
+  function deleteActiveDeck() {
+    var deck = state.decks.find(function (d) { return d.id === activeCardsDeckId; });
+    if (!deck) return;
+    if (!confirm('¿Borrar el mazo "' + deck.name + '" y todas sus cartas? Esta acción no se puede deshacer.')) return;
+    state.decks = state.decks.filter(function (d) { return d.id !== activeCardsDeckId; });
+    saveState();
+    $('jpCardsModalBg').classList.remove('show');
+    renderDashboard();
+  }
+
+  // -------- Boot --------
+  function boot() {
+    if (!localStorage.getItem(JP_KEY)) saveState();
+
+    $('jpReviewBtn').addEventListener('click', function () { startSrsSession(null); });
+    $('jpCramBtn').addEventListener('click', openCramPicker);
+    $('jpCramCancel').addEventListener('click', function () { $('jpCramModalBg').classList.remove('show'); });
+    $('jpQuitBtn').addEventListener('click', backToMain);
+    $('jpSummaryBack').addEventListener('click', backToMain);
+    $('jpCard').addEventListener('click', flipCard);
+    $('jpWrongBtn').addEventListener('click', function () { gradeCurrent(false); });
+    $('jpRightBtn').addEventListener('click', function () { gradeCurrent(true); });
+
+    $('jpNewDeckBtn').addEventListener('click', openDeckModal);
+    $('jpDeckCancel').addEventListener('click', function () { $('jpDeckModalBg').classList.remove('show'); });
+    $('jpDeckSave').addEventListener('click', saveDeck);
+    $('jpCardsModalClose').addEventListener('click', function () { $('jpCardsModalBg').classList.remove('show'); renderDashboard(); });
+    $('jpCardFormSave').addEventListener('click', saveCardForm);
+    $('jpCardFormCancel').addEventListener('click', resetCardForm);
+    $('jpDeckDelete').addEventListener('click', deleteActiveDeck);
+
+    renderDashboard();
+    window.addEventListener('storage', function () { state = loadState(); renderDashboard(); });
+  }
+
+  window.jpRenderAll = function () { state = loadState(); renderDashboard(); };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof initCloudSync !== 'function') return;
+  initCloudSync({
+    appKey: 'japanese',
+    syncedKeys: ['jp_v1'],
+    onApplied: function () {
+      if (typeof window.jpRenderAll === 'function') window.jpRenderAll();
+    }
+  });
+});
+</script>
+
+</body>
+</html>

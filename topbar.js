@@ -194,7 +194,7 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     const p = (window.location.pathname || '').toLowerCase();
     if (p.endsWith('health.html')) return 'health';
     if (p.endsWith('gym.html') || p.endsWith('running.html')) return 'fitness';
-    if (p.endsWith('learn.html')) return 'learn';
+    if (p.endsWith('learn.html') || p.endsWith('japanese.html')) return 'learn';
     if (p.endsWith('work.html')) return 'work';
     return 'main';
   }
